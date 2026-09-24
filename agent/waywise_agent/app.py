@@ -96,7 +96,8 @@ async def chat_completions(
 ):
     device_id = x_device_id or req.user
     messages = build_messages(req, settings)
-    params = {k: v for k, v in {"temperature": req.temperature, "max_tokens": req.max_tokens}.items() if v is not None}
+    max_tokens = min(req.max_tokens or settings.llm_max_tokens, settings.llm_max_tokens)
+    params = {k: v for k, v in {"temperature": req.temperature, "max_tokens": max_tokens}.items() if v is not None}
     completion_id = f"chatcmpl-{uuid.uuid4().hex}"
     created = int(time.time())
     model = settings.agent_model_name

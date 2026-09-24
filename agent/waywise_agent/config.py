@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_model: str = ""
     llm_timeout_s: float = 8.0
+    # 回复长度的硬上限：prompt 管不住时兜底，防止一轮说十几秒
+    llm_max_tokens: int = 150
 
     llm_fallback_base_url: str = ""
     llm_fallback_api_key: str = ""
