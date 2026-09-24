@@ -1,0 +1,33 @@
+# 服务器上的目录布局（由 deploy.sh 同步）：
+#   ~/waywise/docker-compose.yml
+#   ~/waywise/agent/                 ← agent 源码 + .env
+#   ~/waywise/xiaozhi/data/.config.yaml
+#   ~/waywise/xiaozhi/models/SenseVoiceSmall/model.pt
+services:
+  agent:
+    build: ./agent
+    container_name: waywise-agent
+    restart: always
+    env_file: ./agent/.env
+    environment:
+      - TZ=Asia/Shanghai
+    # 不对公网暴露，只给同一网络里的 xiaozhi 调用；本机调试用 127.0.0.1:8080
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  xiaozhi:
+    image: ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest
+    container_name: xiaozhi-esp32-server
+    restart: always
+    depends_on:
+      - agent
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - TZ=Asia/Shanghai
+    ports:
+      - "8000:8000"   # 板子的 WebSocket
+      - "8003:8003"   # OTA + Web 测试页 + 视觉接口
+    volumes:
+      - ./xiaozhi/data:/opt/xiaozhi-esp32-server/data
+      - ./xiaozhi/models/SenseVoiceSmall/model.pt:/opt/xiaozhi-esp32-server/models/SenseVoiceSmall/model.pt

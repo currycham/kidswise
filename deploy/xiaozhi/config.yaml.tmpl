@@ -1,0 +1,39 @@
+# xiaozhi-esp32-server 覆盖配置。只写和默认 config.yaml 不同的项。
+# 由 deploy.sh 渲染：__PUBLIC_HOST__ / __AGENT_API_KEY__ 会被替换。
+server:
+  websocket: ws://__PUBLIC_HOST__:8000/xiaozhi/v1/
+  vision_explain: http://__PUBLIC_HOST__:8003/mcp/vision/explain
+  timezone_offset: +8
+
+# 人设在 Waywise agent 里，这里的 prompt 会被 agent 丢弃，写一句占位即可
+prompt: |
+  你是 Mumi。
+system_error_response: "Mumi 有点累了，我们等一下再聊好吗？"
+
+# 结束语会被当成一条 user 消息发给 agent，先关掉
+end_prompt:
+  enable: false
+
+selected_module:
+  VAD: SileroVAD
+  ASR: FunASR
+  LLM: WaywiseAgent
+  TTS: EdgeTTS
+  Memory: nomem       # 记忆在 agent 里做
+  Intent: nointent    # 不要 xiaozhi 的工具调用（放音乐、查天气等）
+
+LLM:
+  WaywiseAgent:
+    type: openai
+    base_url: http://agent:8080/v1
+    model_name: mumi-teacher
+    api_key: __AGENT_API_KEY__
+    timeout:
+      connect: 3
+      read: 15
+
+TTS:
+  EdgeTTS:
+    type: edge
+    voice: zh-CN-XiaoxiaoNeural
+    output_dir: tmp/

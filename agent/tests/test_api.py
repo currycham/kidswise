@@ -39,3 +39,18 @@ def test_stream(client):
     assert lines[-1] == "[DONE]"
     text = "".join(json.loads(l)["choices"][0]["delta"].get("content", "") for l in lines[:-1])
     assert "hello" in text
+
+
+def test_drops_upstream_system_prompt_and_unwraps_speaker_json():
+    from waywise_agent.app import ChatRequest, build_messages
+
+    req = ChatRequest(
+        messages=[
+            {"role": "system", "content": "你是小智，来自台湾的00后女生"},
+            {"role": "user", "content": '{"speaker": "豆豆", "content": "我看到大象了"}'},
+        ]
+    )
+    msgs = build_messages(req, Settings(_env_file=None))
+    assert len([m for m in msgs if m["role"] == "system"]) == 1
+    assert "小智" not in msgs[0]["content"] and "Mumi" in msgs[0]["content"]
+    assert msgs[-1] == {"role": "user", "content": "我看到大象了"}

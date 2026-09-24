@@ -49,15 +49,31 @@ def _text(content: str | list | None) -> str:
     return content or ""
 
 
+def _user_text(content: str | list | None) -> str:
+    """xiaozhi 开了声纹时会把 user 消息包成 {"speaker": ..., "content": ...}，这里还原成纯文本。"""
+    text = _text(content)
+    stripped = text.strip()
+    if stripped.startswith("{") and stripped.endswith("}"):
+        try:
+            data = json.loads(stripped)
+        except ValueError:
+            return text
+        if isinstance(data, dict) and isinstance(data.get("content"), str):
+            return data["content"]
+    return text
+
+
 def build_messages(req: ChatRequest, settings: Settings) -> list[dict]:
     # TODO(第 4 天): 按 device_id 查孩子档案、当前主题、跨会话记忆
     child = ChildProfile(name=settings.default_child_name, age=settings.default_child_age)
-    upstream_system = [_text(m.content) for m in req.messages if m.role == "system"]
+    # 设备接入层（xiaozhi）自带的 system prompt 是它自己的人设和工具规则，一律丢弃，只用 Mumi 的。
+    # TODO(第 8 天): 视觉描述接进来时，给它一个明确标记再单独放行。
     system = build_system_prompt(child, get_theme(settings.default_theme_id))
-    if upstream_system:
-        # 设备接入层塞进来的上下文（如视觉描述）作为补充，不覆盖人设
-        system += "\n\n补充上下文：\n" + "\n".join(upstream_system)
-    history = [{"role": m.role, "content": _text(m.content)} for m in req.messages if m.role in ("user", "assistant")]
+    history = [
+        {"role": m.role, "content": _user_text(m.content) if m.role == "user" else _text(m.content)}
+        for m in req.messages
+        if m.role in ("user", "assistant")
+    ]
     return [{"role": "system", "content": system}, *history[-MAX_HISTORY:]]
 
 
