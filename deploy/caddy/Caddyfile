@@ -1,0 +1,16 @@
+# api.waywise.tech：家长端小程序 / 开发者平台访问 agent 的入口
+# Caddy 自动申请并续期 HTTPS 证书（Let's Encrypt）。原默认配置备份在 Caddyfile.orig
+api.waywise.tech {
+	encode gzip
+
+	# 只暴露外部需要的路径；/v1/chat/completions 只给服务器内部的 xiaozhi 用
+	handle /healthz {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle {
+		respond 404
+	}
+}

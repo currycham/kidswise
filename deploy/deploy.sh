@@ -43,5 +43,9 @@ sed -e "s|__PUBLIC_HOST__|$PUBLIC_HOST|g" -e "s|__AGENT_API_KEY__|$AGENT_API_KEY
   "$ROOT/deploy/xiaozhi/config.yaml.tmpl" |
   "${SSH[@]}" 'cat > waywise/xiaozhi/data/.config.yaml && chmod 600 waywise/xiaozhi/data/.config.yaml waywise/agent/.env'
 
+echo "→ 更新 Caddy（api.waywise.tech 的 HTTPS 入口）"
+rsync -az -e "ssh -i $SSH_KEY" "$ROOT/deploy/caddy/Caddyfile" "$HOST:waywise/Caddyfile"
+"${SSH[@]}" 'sudo cp waywise/Caddyfile /etc/caddy/Caddyfile && sudo caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null && sudo systemctl reload caddy'
+
 echo "→ 重建并启动"
 "${SSH[@]}" 'cd waywise && sudo docker compose up -d --build && sudo docker compose restart xiaozhi && sudo docker compose ps'
