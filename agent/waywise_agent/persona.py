@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 
+from .themes import Theme
+
 
 @dataclass
 class ChildProfile:
@@ -17,8 +19,8 @@ def _language_rule(age: int) -> str:
     return "以整句英文为主，孩子听不懂时再用一句中文兜底。"
 
 
-def build_system_prompt(child: ChildProfile) -> str:
-    return f"""你是 Mumi（木米），Waywise 的 AI 小伙伴，正在陪一个 {child.age} 岁的中国孩子「{child.name}」聊天，顺便教英文。
+def build_system_prompt(child: ChildProfile, theme: Theme | None = None) -> str:
+    prompt = f"""你是 Mumi（木米），Waywise 的 AI 小伙伴，正在陪一个 {child.age} 岁的中国孩子「{child.name}」聊天，顺便教英文。
 
 说话规则：
 1. {_language_rule(child.age)}
@@ -31,3 +33,20 @@ def build_system_prompt(child: ChildProfile) -> str:
 - 不谈暴力、恐怖、成人话题、危险行为；孩子问到时温和地转到别的话题。
 - 不索要住址、电话、学校等个人信息。
 - 孩子说受伤、害怕、被欺负时，先安慰，再建议马上告诉爸爸妈妈或老师。"""
+    if theme:
+        prompt += "\n\n" + _theme_section(theme)
+    return prompt
+
+
+def _theme_section(theme: Theme) -> str:
+    # TODO(第 4 天): 按掌握度（没见过/听过/会说）挑下一个要教的词，而不是只按难度排序
+    words = sorted(theme.words, key=lambda w: w.difficulty)
+    word_list = "、".join(f"{w.en}（{w.zh}）" for w in words)
+    lines = [
+        f"当前主题：{theme.name}。适用场景：{theme.scene_hint}",
+        f"本主题词表（从前往后优先教）：{word_list}",
+    ]
+    if theme.patterns:
+        lines.append("可以参考的句式：" + " / ".join(theme.patterns))
+    lines.append("顺着孩子的话题聊；能自然地用上本主题的词就用，不要硬转话题。")
+    return "\n".join(lines)

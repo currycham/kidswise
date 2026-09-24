@@ -1,0 +1,75 @@
+{
+  "theme_id": "park",
+  "name": "公园",
+  "level": 1,
+  "words": [
+    {
+      "en": "tree",
+      "zh": "树",
+      "difficulty": 1
+    },
+    {
+      "en": "flower",
+      "zh": "花",
+      "difficulty": 1
+    },
+    {
+      "en": "grass",
+      "zh": "草地",
+      "difficulty": 1
+    },
+    {
+      "en": "bird",
+      "zh": "小鸟",
+      "difficulty": 1
+    },
+    {
+      "en": "dog",
+      "zh": "小狗",
+      "difficulty": 1
+    },
+    {
+      "en": "duck",
+      "zh": "鸭子",
+      "difficulty": 1
+    },
+    {
+      "en": "leaf",
+      "zh": "叶子",
+      "difficulty": 1
+    },
+    {
+      "en": "sun",
+      "zh": "太阳",
+      "difficulty": 1
+    },
+    {
+      "en": "kite",
+      "zh": "风筝",
+      "difficulty": 2
+    },
+    {
+      "en": "bike",
+      "zh": "自行车",
+      "difficulty": 2
+    },
+    {
+      "en": "butterfly",
+      "zh": "蝴蝶",
+      "difficulty": 2
+    },
+    {
+      "en": "bench",
+      "zh": "长椅",
+      "difficulty": 2
+    }
+  ],
+  "patterns": [
+    "Look at the {word}!",
+    "Where is the {word}?",
+    "Can you find the {word}?",
+    "Let's walk to the tree!",
+    "The flower smells so nice."
+  ],
+  "scene_hint": "孩子在公园散步、玩耍，或者刚从公园回来"
+}

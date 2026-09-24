@@ -1,0 +1,80 @@
+{
+  "theme_id": "supermarket",
+  "name": "超市",
+  "level": 1,
+  "words": [
+    {
+      "en": "apple",
+      "zh": "苹果",
+      "difficulty": 1
+    },
+    {
+      "en": "banana",
+      "zh": "香蕉",
+      "difficulty": 1
+    },
+    {
+      "en": "milk",
+      "zh": "牛奶",
+      "difficulty": 1
+    },
+    {
+      "en": "bread",
+      "zh": "面包",
+      "difficulty": 1
+    },
+    {
+      "en": "egg",
+      "zh": "鸡蛋",
+      "difficulty": 1
+    },
+    {
+      "en": "cookie",
+      "zh": "饼干",
+      "difficulty": 1
+    },
+    {
+      "en": "juice",
+      "zh": "果汁",
+      "difficulty": 1
+    },
+    {
+      "en": "bag",
+      "zh": "袋子",
+      "difficulty": 1
+    },
+    {
+      "en": "grapes",
+      "zh": "葡萄",
+      "difficulty": 2
+    },
+    {
+      "en": "strawberry",
+      "zh": "草莓",
+      "difficulty": 2
+    },
+    {
+      "en": "yogurt",
+      "zh": "酸奶",
+      "difficulty": 2
+    },
+    {
+      "en": "watermelon",
+      "zh": "西瓜",
+      "difficulty": 2
+    },
+    {
+      "en": "cart",
+      "zh": "购物车",
+      "difficulty": 2
+    }
+  ],
+  "patterns": [
+    "Can you find the {word}?",
+    "Put the {word} in the cart!",
+    "Is the {word} big or small?",
+    "What do we need today?",
+    "Let's pay and go home."
+  ],
+  "scene_hint": "孩子跟家长逛超市、买东西，或者在聊想吃什么"
+}

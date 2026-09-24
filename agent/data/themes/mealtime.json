@@ -1,0 +1,85 @@
+{
+  "theme_id": "mealtime",
+  "name": "吃饭",
+  "level": 1,
+  "words": [
+    {
+      "en": "rice",
+      "zh": "米饭",
+      "difficulty": 1
+    },
+    {
+      "en": "noodles",
+      "zh": "面条",
+      "difficulty": 1
+    },
+    {
+      "en": "fish",
+      "zh": "鱼",
+      "difficulty": 1
+    },
+    {
+      "en": "spoon",
+      "zh": "勺子",
+      "difficulty": 1
+    },
+    {
+      "en": "bowl",
+      "zh": "碗",
+      "difficulty": 1
+    },
+    {
+      "en": "cup",
+      "zh": "杯子",
+      "difficulty": 1
+    },
+    {
+      "en": "hungry",
+      "zh": "饿",
+      "difficulty": 1
+    },
+    {
+      "en": "yummy",
+      "zh": "好吃",
+      "difficulty": 1
+    },
+    {
+      "en": "more",
+      "zh": "还要（更多）",
+      "difficulty": 1
+    },
+    {
+      "en": "chopsticks",
+      "zh": "筷子",
+      "difficulty": 2
+    },
+    {
+      "en": "carrot",
+      "zh": "胡萝卜",
+      "difficulty": 2
+    },
+    {
+      "en": "soup",
+      "zh": "汤",
+      "difficulty": 2
+    },
+    {
+      "en": "meat",
+      "zh": "肉",
+      "difficulty": 2
+    },
+    {
+      "en": "full",
+      "zh": "吃饱了",
+      "difficulty": 2
+    }
+  ],
+  "patterns": [
+    "I'm hungry!",
+    "Pass me the {word}, please.",
+    "Is the soup hot?",
+    "Yummy! Can I have more?",
+    "I'm full, thank you."
+  ],
+  "scene_hint": "吃饭前后，或者孩子在说今天吃了什么"
+}

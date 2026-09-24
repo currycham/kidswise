@@ -1,0 +1,85 @@
+{
+  "theme_id": "zoo",
+  "name": "动物园",
+  "level": 2,
+  "words": [
+    {
+      "en": "elephant",
+      "zh": "大象",
+      "difficulty": 1
+    },
+    {
+      "en": "monkey",
+      "zh": "猴子",
+      "difficulty": 1
+    },
+    {
+      "en": "tiger",
+      "zh": "老虎",
+      "difficulty": 1
+    },
+    {
+      "en": "lion",
+      "zh": "狮子",
+      "difficulty": 1
+    },
+    {
+      "en": "panda",
+      "zh": "熊猫",
+      "difficulty": 1
+    },
+    {
+      "en": "bear",
+      "zh": "熊",
+      "difficulty": 1
+    },
+    {
+      "en": "rabbit",
+      "zh": "兔子",
+      "difficulty": 1
+    },
+    {
+      "en": "giraffe",
+      "zh": "长颈鹿",
+      "difficulty": 2
+    },
+    {
+      "en": "zebra",
+      "zh": "斑马",
+      "difficulty": 2
+    },
+    {
+      "en": "snake",
+      "zh": "蛇",
+      "difficulty": 2
+    },
+    {
+      "en": "penguin",
+      "zh": "企鹅",
+      "difficulty": 2
+    },
+    {
+      "en": "kangaroo",
+      "zh": "袋鼠",
+      "difficulty": 3
+    },
+    {
+      "en": "hippo",
+      "zh": "河马",
+      "difficulty": 3
+    },
+    {
+      "en": "peacock",
+      "zh": "孔雀",
+      "difficulty": 3
+    }
+  ],
+  "patterns": [
+    "Look at the {word}!",
+    "What color is the {word}?",
+    "What does the {word} eat?",
+    "Is the {word} big or small?",
+    "The monkey is so funny!"
+  ],
+  "scene_hint": "孩子在动物园，或者在看动物图片、动物绘本"
+}

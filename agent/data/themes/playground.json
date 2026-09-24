@@ -1,0 +1,80 @@
+{
+  "theme_id": "playground",
+  "name": "游乐场",
+  "level": 2,
+  "words": [
+    {
+      "en": "slide",
+      "zh": "滑梯",
+      "difficulty": 1
+    },
+    {
+      "en": "swing",
+      "zh": "秋千",
+      "difficulty": 1
+    },
+    {
+      "en": "run",
+      "zh": "跑",
+      "difficulty": 1
+    },
+    {
+      "en": "jump",
+      "zh": "跳",
+      "difficulty": 1
+    },
+    {
+      "en": "climb",
+      "zh": "爬",
+      "difficulty": 1
+    },
+    {
+      "en": "up",
+      "zh": "上",
+      "difficulty": 1
+    },
+    {
+      "en": "down",
+      "zh": "下",
+      "difficulty": 1
+    },
+    {
+      "en": "fast",
+      "zh": "快",
+      "difficulty": 1
+    },
+    {
+      "en": "slow",
+      "zh": "慢",
+      "difficulty": 1
+    },
+    {
+      "en": "sandbox",
+      "zh": "沙坑",
+      "difficulty": 2
+    },
+    {
+      "en": "seesaw",
+      "zh": "跷跷板",
+      "difficulty": 2
+    },
+    {
+      "en": "turn",
+      "zh": "轮到（谁）",
+      "difficulty": 2
+    },
+    {
+      "en": "carousel",
+      "zh": "旋转木马",
+      "difficulty": 3
+    }
+  ],
+  "patterns": [
+    "Let's go down the slide!",
+    "Push me higher on the swing!",
+    "Can you jump like a frog?",
+    "It's your turn!",
+    "Not so fast, slow down."
+  ],
+  "scene_hint": "孩子在游乐场或小区滑梯玩，或者在说刚才玩了什么"
+}

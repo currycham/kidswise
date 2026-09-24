@@ -1,0 +1,80 @@
+{
+  "theme_id": "dressing",
+  "name": "穿衣",
+  "level": 1,
+  "words": [
+    {
+      "en": "T-shirt",
+      "zh": "T恤",
+      "difficulty": 1
+    },
+    {
+      "en": "pants",
+      "zh": "裤子",
+      "difficulty": 1
+    },
+    {
+      "en": "shoes",
+      "zh": "鞋子",
+      "difficulty": 1
+    },
+    {
+      "en": "socks",
+      "zh": "袜子",
+      "difficulty": 1
+    },
+    {
+      "en": "hat",
+      "zh": "帽子",
+      "difficulty": 1
+    },
+    {
+      "en": "dress",
+      "zh": "连衣裙",
+      "difficulty": 1
+    },
+    {
+      "en": "coat",
+      "zh": "外套",
+      "difficulty": 2
+    },
+    {
+      "en": "gloves",
+      "zh": "手套",
+      "difficulty": 2
+    },
+    {
+      "en": "pajamas",
+      "zh": "睡衣",
+      "difficulty": 2
+    },
+    {
+      "en": "button",
+      "zh": "扣子",
+      "difficulty": 2
+    },
+    {
+      "en": "put on",
+      "zh": "穿上",
+      "difficulty": 2
+    },
+    {
+      "en": "take off",
+      "zh": "脱下",
+      "difficulty": 3
+    },
+    {
+      "en": "zipper",
+      "zh": "拉链",
+      "difficulty": 3
+    }
+  ],
+  "patterns": [
+    "Put on your {word}!",
+    "Take off your {word}.",
+    "I like your {word}!",
+    "It's cold, put on your coat.",
+    "Left foot, right foot!"
+  ],
+  "scene_hint": "早上穿衣服出门、晚上换睡衣，或者在挑衣服"
+}

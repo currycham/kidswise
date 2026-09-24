@@ -1,0 +1,80 @@
+{
+  "theme_id": "greetings",
+  "name": "打招呼",
+  "level": 1,
+  "words": [
+    {
+      "en": "hello",
+      "zh": "你好",
+      "difficulty": 1
+    },
+    {
+      "en": "goodbye",
+      "zh": "再见",
+      "difficulty": 1
+    },
+    {
+      "en": "good morning",
+      "zh": "早上好",
+      "difficulty": 1
+    },
+    {
+      "en": "good night",
+      "zh": "晚安",
+      "difficulty": 1
+    },
+    {
+      "en": "thank you",
+      "zh": "谢谢",
+      "difficulty": 1
+    },
+    {
+      "en": "please",
+      "zh": "请",
+      "difficulty": 1
+    },
+    {
+      "en": "sorry",
+      "zh": "对不起",
+      "difficulty": 1
+    },
+    {
+      "en": "how are you",
+      "zh": "你好吗",
+      "difficulty": 2
+    },
+    {
+      "en": "I'm fine",
+      "zh": "我很好",
+      "difficulty": 2
+    },
+    {
+      "en": "you're welcome",
+      "zh": "不客气",
+      "difficulty": 2
+    },
+    {
+      "en": "see you",
+      "zh": "回头见",
+      "difficulty": 2
+    },
+    {
+      "en": "excuse me",
+      "zh": "打扰一下",
+      "difficulty": 3
+    },
+    {
+      "en": "nice to meet you",
+      "zh": "很高兴认识你",
+      "difficulty": 3
+    }
+  ],
+  "patterns": [
+    "Hello! How are you?",
+    "I'm fine, thank you!",
+    "Say {word} to Grandma!",
+    "Good night, sweet dreams.",
+    "Nice to meet you, too!"
+  ],
+  "scene_hint": "见到人、道别、说谢谢和对不起的时候；早上起床或晚上睡觉前"
+}

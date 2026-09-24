@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from .config import Settings, get_settings
 from .llm import LLMClient, LLMError
 from .persona import ChildProfile, build_system_prompt
+from .themes import get_theme
 
 log = logging.getLogger("waywise")
 app = FastAPI(title="Waywise Agent")
@@ -52,7 +53,7 @@ def build_messages(req: ChatRequest, settings: Settings) -> list[dict]:
     # TODO(第 4 天): 按 device_id 查孩子档案、当前主题、跨会话记忆
     child = ChildProfile(name=settings.default_child_name, age=settings.default_child_age)
     upstream_system = [_text(m.content) for m in req.messages if m.role == "system"]
-    system = build_system_prompt(child)
+    system = build_system_prompt(child, get_theme(settings.default_theme_id))
     if upstream_system:
         # 设备接入层塞进来的上下文（如视觉描述）作为补充，不覆盖人设
         system += "\n\n补充上下文：\n" + "\n".join(upstream_system)

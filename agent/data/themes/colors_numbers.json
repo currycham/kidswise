@@ -1,0 +1,110 @@
+{
+  "theme_id": "colors_numbers",
+  "name": "颜色和数字",
+  "level": 1,
+  "words": [
+    {
+      "en": "red",
+      "zh": "红色",
+      "difficulty": 1
+    },
+    {
+      "en": "blue",
+      "zh": "蓝色",
+      "difficulty": 1
+    },
+    {
+      "en": "yellow",
+      "zh": "黄色",
+      "difficulty": 1
+    },
+    {
+      "en": "green",
+      "zh": "绿色",
+      "difficulty": 1
+    },
+    {
+      "en": "pink",
+      "zh": "粉色",
+      "difficulty": 1
+    },
+    {
+      "en": "black",
+      "zh": "黑色",
+      "difficulty": 1
+    },
+    {
+      "en": "white",
+      "zh": "白色",
+      "difficulty": 1
+    },
+    {
+      "en": "purple",
+      "zh": "紫色",
+      "difficulty": 2
+    },
+    {
+      "en": "orange",
+      "zh": "橙色",
+      "difficulty": 2
+    },
+    {
+      "en": "one",
+      "zh": "一",
+      "difficulty": 1
+    },
+    {
+      "en": "two",
+      "zh": "二",
+      "difficulty": 1
+    },
+    {
+      "en": "three",
+      "zh": "三",
+      "difficulty": 1
+    },
+    {
+      "en": "four",
+      "zh": "四",
+      "difficulty": 1
+    },
+    {
+      "en": "five",
+      "zh": "五",
+      "difficulty": 1
+    },
+    {
+      "en": "six",
+      "zh": "六",
+      "difficulty": 2
+    },
+    {
+      "en": "seven",
+      "zh": "七",
+      "difficulty": 2
+    },
+    {
+      "en": "eight",
+      "zh": "八",
+      "difficulty": 2
+    },
+    {
+      "en": "nine",
+      "zh": "九",
+      "difficulty": 2
+    },
+    {
+      "en": "ten",
+      "zh": "十",
+      "difficulty": 2
+    }
+  ],
+  "patterns": [
+    "What color is it?",
+    "It's {word}!",
+    "Can you find something {word}?",
+    "Let's count together: one, two, three!",
+    "How many cars can you see?"
+  ],
+  "scene_hint": "随时可用：数东西、说颜色、画画、搭积木的时候"
+}

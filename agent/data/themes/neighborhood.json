@@ -1,0 +1,75 @@
+{
+  "theme_id": "neighborhood",
+  "name": "小区楼下",
+  "level": 2,
+  "words": [
+    {
+      "en": "home",
+      "zh": "家",
+      "difficulty": 1
+    },
+    {
+      "en": "friend",
+      "zh": "朋友",
+      "difficulty": 1
+    },
+    {
+      "en": "car",
+      "zh": "小汽车",
+      "difficulty": 1
+    },
+    {
+      "en": "cat",
+      "zh": "小猫",
+      "difficulty": 1
+    },
+    {
+      "en": "ball",
+      "zh": "球",
+      "difficulty": 1
+    },
+    {
+      "en": "door",
+      "zh": "门",
+      "difficulty": 1
+    },
+    {
+      "en": "stairs",
+      "zh": "楼梯",
+      "difficulty": 2
+    },
+    {
+      "en": "elevator",
+      "zh": "电梯",
+      "difficulty": 2
+    },
+    {
+      "en": "scooter",
+      "zh": "滑板车",
+      "difficulty": 2
+    },
+    {
+      "en": "rain",
+      "zh": "下雨",
+      "difficulty": 2
+    },
+    {
+      "en": "puddle",
+      "zh": "水坑",
+      "difficulty": 3
+    },
+    {
+      "en": "neighbor",
+      "zh": "邻居",
+      "difficulty": 3
+    }
+  ],
+  "patterns": [
+    "Let's go downstairs!",
+    "Press the elevator button, please.",
+    "Say hi to your friend!",
+    "Look at the {word}!",
+    "Time to go home."
+  ],
+  "scene_hint": "孩子在楼下玩、坐电梯、见到邻居和小伙伴"
+}

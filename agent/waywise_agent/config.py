@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     default_child_name: str = "小朋友"
     default_child_age: int = 5
+    default_theme_id: str = "park"
 
 
 @lru_cache

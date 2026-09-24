@@ -1,0 +1,75 @@
+{
+  "theme_id": "brushing",
+  "name": "刷牙",
+  "level": 1,
+  "words": [
+    {
+      "en": "teeth",
+      "zh": "牙齿",
+      "difficulty": 1
+    },
+    {
+      "en": "toothbrush",
+      "zh": "牙刷",
+      "difficulty": 1
+    },
+    {
+      "en": "brush",
+      "zh": "刷",
+      "difficulty": 1
+    },
+    {
+      "en": "mouth",
+      "zh": "嘴巴",
+      "difficulty": 1
+    },
+    {
+      "en": "clean",
+      "zh": "干净",
+      "difficulty": 1
+    },
+    {
+      "en": "water",
+      "zh": "水",
+      "difficulty": 1
+    },
+    {
+      "en": "toothpaste",
+      "zh": "牙膏",
+      "difficulty": 2
+    },
+    {
+      "en": "spit",
+      "zh": "吐",
+      "difficulty": 2
+    },
+    {
+      "en": "bubbles",
+      "zh": "泡泡",
+      "difficulty": 2
+    },
+    {
+      "en": "mirror",
+      "zh": "镜子",
+      "difficulty": 2
+    },
+    {
+      "en": "towel",
+      "zh": "毛巾",
+      "difficulty": 2
+    },
+    {
+      "en": "rinse",
+      "zh": "漱口",
+      "difficulty": 3
+    }
+  ],
+  "patterns": [
+    "Let's brush your teeth!",
+    "Up and down, up and down.",
+    "Open your mouth, say ah!",
+    "Now spit it out.",
+    "Wow, your teeth are so clean!"
+  ],
+  "scene_hint": "早晚刷牙洗漱的时候"
+}
