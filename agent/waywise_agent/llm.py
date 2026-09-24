@@ -15,15 +15,25 @@ class LLMError(RuntimeError):
     pass
 
 
+# 对话场景不需要思考模式，关掉能省约 1 秒首字延迟（方舟实测 1.2–2.0s → 0.9s）
+THINKING_OFF = {
+    "volces.com": {"thinking": {"type": "disabled"}},
+    "aliyuncs.com": {"enable_thinking": False},
+    "bigmodel.cn": {"thinking": {"type": "disabled"}},
+    "deepseek.com": {"thinking": {"type": "disabled"}},
+}
+
+
 class _Upstream:
     def __init__(self, base_url: str, api_key: str, model: str, timeout_s: float):
         self.url = base_url.rstrip("/") + "/chat/completions"
         self.headers = {"Authorization": f"Bearer {api_key}"}
         self.model = model
         self.timeout = httpx.Timeout(timeout_s, connect=3.0)
+        self.extra = next((v for domain, v in THINKING_OFF.items() if domain in base_url), {})
 
     async def stream(self, messages: list[dict], **params) -> AsyncIterator[str]:
-        body = {"model": self.model, "messages": messages, "stream": True, **params}
+        body = {"model": self.model, "messages": messages, "stream": True, **self.extra, **params}
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             async with client.stream("POST", self.url, headers=self.headers, json=body) as resp:
                 if resp.status_code != 200:
