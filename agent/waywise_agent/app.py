@@ -2,8 +2,10 @@
 
 import json
 import logging
+import re
 import time
 import uuid
+from dataclasses import dataclass
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import StreamingResponse
@@ -11,13 +13,17 @@ from pydantic import BaseModel
 
 from .config import Settings, get_settings
 from .llm import LLMClient, LLMError
+from .memory import MemoryScheduler
 from .persona import ChildProfile, build_system_prompt
-from .themes import get_theme
+from .store import Child, SessionRef, Store
+from .themes import Theme, find_words, get_theme
 
 log = logging.getLogger("waywise")
 app = FastAPI(title="Waywise Agent")
 
 MAX_HISTORY = 20  # 会话内记忆：截断到最近 N 条
+# xiaozhi 的 prompt 模板（deploy/xiaozhi/waywise-prompt.txt）只输出这个标记，用来告诉我们是哪台设备
+DEVICE_MARKER = re.compile(r'<waywise-device id="([^"]*)"\s*/>')
 
 
 class Message(BaseModel):
@@ -36,6 +42,24 @@ class ChatRequest(BaseModel):
 
 def get_llm(settings: Settings = Depends(get_settings)) -> LLMClient:
     return LLMClient(settings)
+
+
+@dataclass
+class Runtime:
+    store: Store
+    memory: MemoryScheduler
+
+
+_RUNTIMES: dict[str, Runtime] = {}
+
+
+def get_runtime(settings: Settings = Depends(get_settings)) -> Runtime:
+    rt = _RUNTIMES.get(settings.db_path)
+    if rt is None:
+        store = Store(settings.db_path, settings.region)
+        memory = MemoryScheduler(store, lambda: LLMClient(settings), settings.memory_idle_s)
+        rt = _RUNTIMES[settings.db_path] = Runtime(store, memory)
+    return rt
 
 
 def check_key(authorization: str = Header(default=""), settings: Settings = Depends(get_settings)) -> None:
@@ -63,18 +87,69 @@ def _user_text(content: str | list | None) -> str:
     return text
 
 
-def build_messages(req: ChatRequest, settings: Settings) -> list[dict]:
-    # TODO(第 4 天): 按 device_id 查孩子档案、当前主题、跨会话记忆
-    child = ChildProfile(name=settings.default_child_name, age=settings.default_child_age)
+def history_of(req: ChatRequest) -> list[dict]:
     # 设备接入层（xiaozhi）自带的 system prompt 是它自己的人设和工具规则，一律丢弃，只用 Mumi 的。
     # TODO(第 8 天): 视觉描述接进来时，给它一个明确标记再单独放行。
-    system = build_system_prompt(child, get_theme(settings.default_theme_id))
-    history = [
+    return [
         {"role": m.role, "content": _user_text(m.content) if m.role == "user" else _text(m.content)}
         for m in req.messages
         if m.role in ("user", "assistant")
     ]
-    return [{"role": "system", "content": system}, *history[-MAX_HISTORY:]]
+
+
+def device_id_of(req: ChatRequest, header: str | None) -> str:
+    for m in req.messages:
+        if m.role == "system" and (match := DEVICE_MARKER.search(_text(m.content))):
+            if match.group(1) not in ("", "None"):
+                return match.group(1)
+    return header or req.user or "unknown"
+
+
+@dataclass
+class Turn:
+    child: Child
+    session: SessionRef
+    theme: Theme | None
+    messages: list[dict]
+
+
+async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt: Runtime) -> Turn:
+    """软件文档 4.1 的 ①③：查孩子和主题 → 定会话 → 记下孩子这句 → 组装 system prompt。"""
+    history = history_of(req)
+    child = rt.store.child_for_device(
+        device_id, settings.default_child_name, settings.default_child_age, settings.default_theme_id
+    )
+    theme = get_theme(child.theme_id or settings.default_theme_id)
+    # xiaozhi 每次都发整场对话；只有一条孩子的话 = 设备刚连上，新的一场
+    first_turn = sum(m["role"] == "user" for m in history) <= 1
+    session = rt.store.resolve_session(device_id, child.id, first_turn, settings.session_idle_s)
+    if session.previous_id:
+        await rt.memory.flush(session.previous_id, child.id)
+
+    child_text = next((m["content"] for m in reversed(history) if m["role"] == "user"), "")
+    said = find_words(theme, child_text) if theme else []
+    rt.store.add_message(session.id, "user", child_text, said)
+    rt.store.record_words(child.id, heard=[], said=said)
+
+    system = build_system_prompt(
+        ChildProfile(name=child.name, age=child.age),
+        theme,
+        word_statuses=rt.store.word_statuses(child.id),
+        facts=rt.store.recent_facts(child.id, exclude_session=session.id),
+        session_start=session.is_new,
+    )
+    return Turn(child, session, theme, [{"role": "system", "content": system}, *history[-MAX_HISTORY:]])
+
+
+def finish_turn(turn: Turn, reply: str, rt: Runtime) -> None:
+    """软件文档 4.1 的 ⑥：落库这轮说了什么、碰到哪些目标词，并安排记忆抽取。"""
+    try:
+        heard = find_words(turn.theme, reply) if turn.theme else []
+        rt.store.add_message(turn.session.id, "assistant", reply, heard)
+        rt.store.record_words(turn.child.id, heard=heard, said=[])
+        rt.memory.schedule(turn.session.id, turn.child.id)
+    except Exception:  # noqa: BLE001 — 落库失败不能影响孩子听到回答
+        log.exception("finish_turn failed session=%s", turn.session.id)
 
 
 @app.get("/healthz")
@@ -93,15 +168,17 @@ async def chat_completions(
     x_device_id: str | None = Header(default=None),
     settings: Settings = Depends(get_settings),
     llm: LLMClient = Depends(get_llm),
+    rt: Runtime = Depends(get_runtime),
 ):
-    device_id = x_device_id or req.user
-    messages = build_messages(req, settings)
+    device_id = device_id_of(req, x_device_id)
+    turn = await prepare_turn(req, device_id, settings, rt)
+    messages = turn.messages
     max_tokens = min(req.max_tokens or settings.llm_max_tokens, settings.llm_max_tokens)
     params = {k: v for k, v in {"temperature": req.temperature, "max_tokens": max_tokens}.items() if v is not None}
     completion_id = f"chatcmpl-{uuid.uuid4().hex}"
     created = int(time.time())
     model = settings.agent_model_name
-    log.info("chat device=%s turns=%d", device_id, len(messages) - 1)
+    log.info("chat device=%s session=%s new=%s turns=%d", device_id, turn.session.id, turn.session.is_new, len(messages) - 1)
 
     if req.stream:
 
@@ -117,12 +194,16 @@ async def chat_completions(
                 return f"data: {json.dumps(body, ensure_ascii=False)}\n\n"
 
             yield chunk({"role": "assistant"})
+            reply = ""
             try:
                 async for text in llm.stream(messages, **params):
+                    reply += text
                     yield chunk({"content": text})
             except LLMError as e:
                 log.error("llm failed: %s", e)
                 yield chunk({"content": "Mumi 有点累了，我们等一下再聊好吗？"})
+            if reply:
+                finish_turn(turn, reply.strip(), rt)
             yield chunk({}, "stop")
             yield "data: [DONE]\n\n"
 
@@ -133,6 +214,7 @@ async def chat_completions(
     except LLMError as e:
         log.error("llm failed: %s", e)
         raise HTTPException(status_code=502, detail="upstream llm unavailable")
+    finish_turn(turn, text.strip(), rt)
     return {
         "id": completion_id,
         "object": "chat.completion",

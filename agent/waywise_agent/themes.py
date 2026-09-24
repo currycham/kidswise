@@ -1,5 +1,6 @@
 """主题词表（软件文档 4.3）。同一个结构也是开发者平台的数据结构。"""
 
+import re
 from functools import lru_cache
 from pathlib import Path
 
@@ -44,3 +45,9 @@ def load_themes(directory: Path = THEMES_DIR) -> dict[str, Theme]:
 
 def get_theme(theme_id: str) -> Theme | None:
     return load_themes().get(theme_id)
+
+
+def find_words(theme: Theme, text: str) -> list[str]:
+    """文本里出现了哪些本主题的目标词（按英文匹配，不分大小写，整词）。"""
+    lowered = text.lower()
+    return [w.en for w in theme.words if re.search(rf"(?<![a-z']){re.escape(w.en.lower())}s?(?![a-z'])", lowered)]

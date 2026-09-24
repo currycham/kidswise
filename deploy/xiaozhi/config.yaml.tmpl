@@ -5,9 +5,11 @@ server:
   vision_explain: http://__PUBLIC_HOST__:8003/mcp/vision/explain
   timezone_offset: +8
 
-# 人设在 Waywise agent 里，这里的 prompt 会被 agent 丢弃，写一句占位即可
+# 人设在 Waywise agent 里。xiaozhi 的 system prompt 只用来带设备 ID：
+# 模板只渲染出 <waywise-device id="..."/>，agent 解析后丢弃其余内容。
 prompt: |
   你是 Mumi。
+prompt_template: data/waywise-prompt.txt
 system_error_response: "Mumi 有点累了，我们等一下再聊好吗？"
 
 # 结束语会被当成一条 user 消息发给 agent，先关掉

@@ -1,7 +1,9 @@
 # 服务器上的目录布局（由 deploy.sh 同步）：
 #   ~/waywise/docker-compose.yml
 #   ~/waywise/agent/                 ← agent 源码 + .env
+#   ~/waywise/agent-state/waywise.db  ← 对话、记忆、掌握度
 #   ~/waywise/xiaozhi/data/.config.yaml
+#   ~/waywise/xiaozhi/data/waywise-prompt.txt
 #   ~/waywise/xiaozhi/models/SenseVoiceSmall/model.pt
 services:
   agent:
@@ -14,6 +16,8 @@ services:
     # 不对公网暴露，只给同一网络里的 xiaozhi 调用；本机调试用 127.0.0.1:8080
     ports:
       - "127.0.0.1:8080:8080"
+    volumes:
+      - ./agent-state:/app/state   # SQLite 数据库，重建容器不丢
 
   xiaozhi:
     image: ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest

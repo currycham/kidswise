@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     default_child_age: int = 5
     default_theme_id: str = "park"
 
+    # 存储（SQLite 文件，容器里挂卷）；region 写进每一行，按区域可分离
+    db_path: str = "state/waywise.db"
+    region: str = "cn"
+    # 同一设备空闲多久算新的一场；一场安静多久后抽取跨会话记忆
+    session_idle_s: float = 600
+    memory_idle_s: float = 20
+
 
 @lru_cache
 def get_settings() -> Settings:

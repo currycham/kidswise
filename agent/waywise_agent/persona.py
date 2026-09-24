@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from .store import NEW
 from .themes import Theme
 
 
@@ -19,7 +20,13 @@ def _language_rule(age: int) -> str:
     return "以整句英文为主，孩子听不懂时再用一句中文兜底。"
 
 
-def build_system_prompt(child: ChildProfile, theme: Theme | None = None) -> str:
+def build_system_prompt(
+    child: ChildProfile,
+    theme: Theme | None = None,
+    word_statuses: dict[str, str] | None = None,
+    facts: list[str] | None = None,
+    session_start: bool = False,
+) -> str:
     prompt = f"""你是 Mumi（木米），Waywise 的 AI 小伙伴，正在陪一个 {child.age} 岁的中国孩子「{child.name}」聊天，顺便教英文。
 
 说话规则：
@@ -40,19 +47,33 @@ def build_system_prompt(child: ChildProfile, theme: Theme | None = None) -> str:
 - 不索要住址、电话、学校等个人信息。
 - 孩子说受伤、害怕、被欺负时，先安慰，再建议马上告诉爸爸妈妈或老师。"""
     if theme:
-        prompt += "\n\n" + _theme_section(theme)
+        prompt += "\n\n" + _theme_section(theme, word_statuses or {})
+    if facts:
+        prompt += "\n\n" + _memory_section(child, facts, session_start)
     return prompt
 
 
-def _theme_section(theme: Theme) -> str:
-    # TODO(第 4 天): 按掌握度（没见过/听过/会说）挑下一个要教的词，而不是只按难度排序
+def _theme_section(theme: Theme, statuses: dict[str, str]) -> str:
     words = sorted(theme.words, key=lambda w: w.difficulty)
-    word_list = "、".join(f"{w.en}（{w.zh}）" for w in words)
-    lines = [
-        f"当前主题：{theme.name}。适用场景：{theme.scene_hint}",
-        f"本主题词表（从前往后优先教）：{word_list}",
-    ]
+    learned = [w for w in words if statuses.get(w.en, NEW) != NEW]
+    fresh = [w for w in words if statuses.get(w.en, NEW) == NEW]
+    lines = [f"当前主题：{theme.name}。适用场景：{theme.scene_hint}"]
+    if learned:
+        lines.append("孩子已经学过的词（可以放心用来复习）：" + "、".join(f"{w.en}（{w.zh}）" for w in learned))
+    if fresh:
+        lines.append(f"这次要教的新词（只教这一个）：{fresh[0].en}（{fresh[0].zh}）")
+    else:
+        lines.append("本主题的词都学过了，这次以复习为主，让孩子多说。")
     if theme.patterns:
         lines.append("可以参考的句式：" + " / ".join(theme.patterns))
-    lines.append("顺着孩子的话题聊；能自然地用上本主题的词就用，不要硬转话题。")
+    lines.append("顺着孩子的话题聊；孩子自己提到别的东西时，教孩子提到的那个词也可以，不要硬转话题。")
+    return "\n".join(lines)
+
+
+def _memory_section(child: ChildProfile, facts: list[str], session_start: bool) -> str:
+    lines = [f"你记得之前聊天时关于「{child.name}」的这些事："] + [f"- {f}" for f in facts]
+    if session_start:
+        lines.append("这是新一次聊天的开头：打招呼时自然地提起其中一件，比如「上次你说……」，再接着聊。")
+    else:
+        lines.append("需要时自然地用上，不要每句都提。")
     return "\n".join(lines)

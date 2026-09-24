@@ -1,0 +1,1 @@
+<waywise-device id="{{device_id}}"/>

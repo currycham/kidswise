@@ -10,8 +10,9 @@ AUTH = {"Authorization": "Bearer test-key"}
 
 
 @pytest.fixture
-def client():
-    app.dependency_overrides[get_settings] = lambda: Settings(_env_file=None, agent_api_key="test-key", llm_provider="mock")
+def client(tmp_path):
+    settings = Settings(_env_file=None, agent_api_key="test-key", llm_provider="mock", db_path=str(tmp_path / "t.db"))
+    app.dependency_overrides[get_settings] = lambda: settings
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -42,15 +43,14 @@ def test_stream(client):
 
 
 def test_drops_upstream_system_prompt_and_unwraps_speaker_json():
-    from waywise_agent.app import ChatRequest, build_messages
+    from waywise_agent.app import ChatRequest, device_id_of, history_of
 
     req = ChatRequest(
         messages=[
-            {"role": "system", "content": "你是小智，来自台湾的00后女生"},
+            {"role": "system", "content": '你是小智，来自台湾的00后女生 <waywise-device id="aa:bb:cc"/>'},
             {"role": "user", "content": '{"speaker": "豆豆", "content": "我看到大象了"}'},
         ]
     )
-    msgs = build_messages(req, Settings(_env_file=None))
-    assert len([m for m in msgs if m["role"] == "system"]) == 1
-    assert "小智" not in msgs[0]["content"] and "Mumi" in msgs[0]["content"]
-    assert msgs[-1] == {"role": "user", "content": "我看到大象了"}
+    assert history_of(req) == [{"role": "user", "content": "我看到大象了"}]
+    assert device_id_of(req, None) == "aa:bb:cc"
+    assert device_id_of(ChatRequest(messages=[{"role": "user", "content": "hi"}]), "hdr") == "hdr"

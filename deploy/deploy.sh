@@ -35,6 +35,7 @@ rsync -az --delete -e "ssh -i $SSH_KEY" \
   --exclude .venv --exclude .pytest_cache --exclude __pycache__ \
   "$ROOT/agent/" "$HOST:waywise/agent/"
 rsync -az -e "ssh -i $SSH_KEY" "$ROOT/deploy/docker-compose.yml" "$HOST:waywise/docker-compose.yml"
+rsync -az -e "ssh -i $SSH_KEY" "$ROOT/deploy/xiaozhi/waywise-prompt.txt" "$HOST:waywise/xiaozhi/data/waywise-prompt.txt"
 
 echo "→ 渲染 xiaozhi 配置"
 sed -e "s|__PUBLIC_HOST__|$PUBLIC_HOST|g" -e "s|__AGENT_API_KEY__|$AGENT_API_KEY|g" \

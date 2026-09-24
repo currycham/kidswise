@@ -28,8 +28,14 @@ def test_rejects_unknown_placeholder():
         Theme(theme_id="x", name="x", level=1, words=[{"en": "a", "zh": "a", "difficulty": 1}], patterns=["Hi {name}"])
 
 
-def test_prompt_includes_theme_words():
-    prompt = build_system_prompt(ChildProfile(name="豆豆", age=5), load_themes()["zoo"])
-    assert "动物园" in prompt and "elephant（大象）" in prompt
-    # easier words come before harder ones
-    assert prompt.index("elephant") < prompt.index("kangaroo")
+def test_prompt_teaches_one_new_word_at_a_time():
+    zoo = load_themes()["zoo"]
+    child = ChildProfile(name="豆豆", age=5)
+    prompt = build_system_prompt(child, zoo)
+    assert "动物园" in prompt
+    assert "这次要教的新词（只教这一个）：elephant（大象）" in prompt
+    assert "kangaroo" not in prompt  # 还没轮到的词不出现
+
+    prompt = build_system_prompt(child, zoo, word_statuses={"elephant": "heard"})
+    assert "已经学过的词（可以放心用来复习）：elephant（大象）" in prompt
+    assert "只教这一个）：monkey（猴子）" in prompt
