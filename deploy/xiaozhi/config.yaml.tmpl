@@ -1,5 +1,5 @@
 # xiaozhi-esp32-server 覆盖配置。只写和默认 config.yaml 不同的项。
-# 由 deploy.sh 渲染：__PUBLIC_HOST__ / __AGENT_API_KEY__ 会被替换。
+# 由 deploy.sh 渲染：__PUBLIC_HOST__ / __AGENT_API_KEY__ / __TTS_*__ 会被替换。
 server:
   websocket: ws://__PUBLIC_HOST__:8000/xiaozhi/v1/
   vision_explain: http://__PUBLIC_HOST__:8003/mcp/vision/explain
@@ -18,7 +18,7 @@ selected_module:
   VAD: SileroVAD
   ASR: FunASR
   LLM: WaywiseAgent
-  TTS: EdgeTTS
+  TTS: DoubaoTTS2   # 出问题时改回 EdgeTTS（免费，但首包 1–2 秒）
   Memory: nomem       # 记忆在 agent 里做
   Intent: nointent    # 不要 xiaozhi 的工具调用（放音乐、查天气等）
 
@@ -33,6 +33,21 @@ LLM:
       read: 15
 
 TTS:
+  # 豆包语音合成 2.0，双向流式，首包实测约 0.4–0.5 秒
+  DoubaoTTS2:
+    type: huoshan_double_stream
+    ws_url: wss://openspeech.bytedance.com/api/v3/tts/bidirection
+    appid: __TTS_APPID__
+    access_token: __TTS_ACCESS_TOKEN__
+    resource_id: seed-tts-2.0
+    speaker: __TTS_VOICE__
+    enable_ws_reuse: True
+    audio_params:
+      speech_rate: -10   # 给孩子听，稍慢一点
+      loudness_rate: 0
+    additions:
+      post_process:
+        pitch: 0
   EdgeTTS:
     type: edge
     voice: zh-CN-XiaoxiaoNeural

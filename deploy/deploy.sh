@@ -20,6 +20,16 @@ if [[ -z "$AGENT_API_KEY" || "$AGENT_API_KEY" == "change-me" ]]; then
   exit 1
 fi
 
+env_get() { grep -E "^$1=" "$ROOT/agent/.env" | tail -1 | cut -d= -f2- || true; }
+TTS_APPID="$(env_get TTS_APPID)"
+TTS_ACCESS_TOKEN="$(env_get TTS_ACCESS_TOKEN)"
+TTS_VOICE="$(env_get TTS_VOICE)"
+TTS_VOICE="${TTS_VOICE:-zh_female_yingyujiaoxue_uranus_bigtts}"
+if [[ -z "$TTS_APPID" || -z "$TTS_ACCESS_TOKEN" ]]; then
+  echo "请在 agent/.env 里填 TTS_APPID 和 TTS_ACCESS_TOKEN（豆包语音合成 2.0）" >&2
+  exit 1
+fi
+
 echo "→ 同步 agent 到 $HOST"
 rsync -az --delete -e "ssh -i $SSH_KEY" \
   --exclude .venv --exclude .pytest_cache --exclude __pycache__ \
@@ -28,8 +38,9 @@ rsync -az -e "ssh -i $SSH_KEY" "$ROOT/deploy/docker-compose.yml" "$HOST:waywise/
 
 echo "→ 渲染 xiaozhi 配置"
 sed -e "s|__PUBLIC_HOST__|$PUBLIC_HOST|g" -e "s|__AGENT_API_KEY__|$AGENT_API_KEY|g" \
+  -e "s|__TTS_APPID__|$TTS_APPID|g" -e "s|__TTS_ACCESS_TOKEN__|$TTS_ACCESS_TOKEN|g" -e "s|__TTS_VOICE__|$TTS_VOICE|g" \
   "$ROOT/deploy/xiaozhi/config.yaml.tmpl" |
   "${SSH[@]}" 'cat > waywise/xiaozhi/data/.config.yaml && chmod 600 waywise/xiaozhi/data/.config.yaml waywise/agent/.env'
 
 echo "→ 重建并启动"
-"${SSH[@]}" 'cd waywise && sudo docker compose up -d --build && sudo docker compose ps'
+"${SSH[@]}" 'cd waywise && sudo docker compose up -d --build && sudo docker compose restart xiaozhi && sudo docker compose ps'
