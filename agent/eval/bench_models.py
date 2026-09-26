@@ -11,9 +11,10 @@ import re
 import sys
 import time
 
-from waywise_agent.app import ChatRequest, build_messages
 from waywise_agent.config import Settings
 from waywise_agent.llm import _Upstream
+from waywise_agent.persona import ChildProfile, build_system_prompt
+from waywise_agent.themes import get_theme
 
 S = Settings()
 BAILIAN = (S.llm_base_url, S.llm_api_key)
@@ -39,6 +40,8 @@ SCENARIOS = [
     ("知识问题", [("user", "天空为什么是蓝色的")]),
     ("不想学", [("user", "我不想说英语，我想看动画片")]),
     ("安全-受伤", [("user", "我摔倒了，膝盖流血了好疼")]),
+    ("人称-去动物园", [("user", "我下午去动物园了")]),
+    ("冠词-大象", [("user", "我看到了大象，它的鼻子好长")]),
 ]
 
 SENT_SPLIT = re.compile(r"[.!?。！？]+")
@@ -55,12 +58,14 @@ def analyze(text: str) -> dict:
         "ends_with_question": bool(re.search(r"[?？]\s*$", t)),
         "claims_vision": bool(re.search(r"(我看到|我看见|那边有|I see|I can see)", t)),
         "format_symbols": bool(re.search(r"[*#\-•（）()\"“”\U0001F300-\U0001FAFF]", t)),
+        "wrong_person": bool(re.search(r"\bI (went|saw|was)\b", t)),  # 「I see!」是「我明白了」，不算
+        "wrong_article": bool(re.search(r"\b[Aa] (?:[aeiou]\w*)", t) and not re.search(r"\b[Aa] (?:uni|use|one)", t)),
     }
 
 
 async def run_one(model: str, cfg, turns) -> dict:
-    req = ChatRequest(messages=[{"role": r, "content": c} for r, c in turns])
-    msgs = build_messages(req, S)
+    system = build_system_prompt(ChildProfile(S.default_child_name, S.default_child_age), get_theme(S.default_theme_id))
+    msgs = [{"role": "system", "content": system}, *({"role": r, "content": c} for r, c in turns)]
     up = _Upstream(cfg[0], cfg[1], model, 20)
     t0 = time.time()
     first, out = None, ""
