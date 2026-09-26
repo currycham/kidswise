@@ -54,3 +54,10 @@ def test_drops_upstream_system_prompt_and_unwraps_speaker_json():
     assert history_of(req) == [{"role": "user", "content": "我看到大象了"}]
     assert device_id_of(req, None) == "aa:bb:cc"
     assert device_id_of(ChatRequest(messages=[{"role": "user", "content": "hi"}]), "hdr") == "hdr"
+
+
+def test_strips_asr_emotion_emoji():
+    from waywise_agent.app import ChatRequest, history_of
+
+    req = ChatRequest(messages=[{"role": "user", "content": "我画了一只小狗。😊"}])
+    assert history_of(req) == [{"role": "user", "content": "我画了一只小狗。"}]

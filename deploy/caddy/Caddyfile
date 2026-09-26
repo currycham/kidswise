@@ -14,3 +14,14 @@ api.waywise.tech {
 		respond 404
 	}
 }
+
+# waywise.tech：官网 / 开发者平台（/studio，第 10–12 天）
+waywise.tech, www.waywise.tech {
+	encode gzip
+	handle_path /studio* {
+		respond "Waywise Studio 即将上线" 200
+	}
+	handle {
+		respond "Waywise" 200
+	}
+}

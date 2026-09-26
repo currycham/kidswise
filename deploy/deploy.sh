@@ -25,6 +25,17 @@ TTS_APPID="$(env_get TTS_APPID)"
 TTS_ACCESS_TOKEN="$(env_get TTS_ACCESS_TOKEN)"
 TTS_VOICE="$(env_get TTS_VOICE)"
 TTS_VOICE="${TTS_VOICE:-zh_female_yingyujiaoxue_uranus_bigtts}"
+# 语音识别用百炼（Qwen3-ASR-Flash）：优先 ASR_API_KEY，否则用 .env 里指向百炼的那组 LLM key
+ASR_API_KEY="$(env_get ASR_API_KEY)"
+if [[ -z "$ASR_API_KEY" ]]; then
+  if [[ "$(env_get LLM_BASE_URL)" == *dashscope* ]]; then ASR_API_KEY="$(env_get LLM_API_KEY)"
+  elif [[ "$(env_get LLM_FALLBACK_BASE_URL)" == *dashscope* ]]; then ASR_API_KEY="$(env_get LLM_FALLBACK_API_KEY)"
+  fi
+fi
+if [[ -z "$ASR_API_KEY" ]]; then
+  echo "请在 agent/.env 里填 ASR_API_KEY（阿里云百炼 API Key，用于语音识别）" >&2
+  exit 1
+fi
 if [[ -z "$TTS_APPID" || -z "$TTS_ACCESS_TOKEN" ]]; then
   echo "请在 agent/.env 里填 TTS_APPID 和 TTS_ACCESS_TOKEN（豆包语音合成 2.0）" >&2
   exit 1
@@ -40,6 +51,7 @@ rsync -az -e "ssh -i $SSH_KEY" "$ROOT/deploy/xiaozhi/waywise-prompt.txt" "$HOST:
 echo "→ 渲染 xiaozhi 配置"
 sed -e "s|__PUBLIC_HOST__|$PUBLIC_HOST|g" -e "s|__AGENT_API_KEY__|$AGENT_API_KEY|g" \
   -e "s|__TTS_APPID__|$TTS_APPID|g" -e "s|__TTS_ACCESS_TOKEN__|$TTS_ACCESS_TOKEN|g" -e "s|__TTS_VOICE__|$TTS_VOICE|g" \
+  -e "s|__ASR_API_KEY__|$ASR_API_KEY|g" \
   "$ROOT/deploy/xiaozhi/config.yaml.tmpl" |
   "${SSH[@]}" 'cat > waywise/xiaozhi/data/.config.yaml && chmod 600 waywise/xiaozhi/data/.config.yaml waywise/agent/.env'
 

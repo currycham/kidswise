@@ -18,7 +18,7 @@ end_prompt:
 
 selected_module:
   VAD: SileroVAD
-  ASR: FunASR
+  ASR: Qwen3ASRFlash   # 2026-09-26 用 153 句真实儿童录音对比后选定；出问题可改回 FunASR（本地 SenseVoice）
   LLM: WaywiseAgent
   TTS: DoubaoTTS2   # 出问题时改回 EdgeTTS（免费，但首包 1–2 秒）
   Memory: nomem       # 记忆在 agent 里做
@@ -33,6 +33,19 @@ LLM:
     timeout:
       connect: 3
       read: 15
+
+ASR:
+  # 真实儿童录音对比（agent/eval/ASR.md）：中文差异 5.1%（SenseVoice 8.3%），英文 25.3%（29.3%），
+  # 短句如「画画」「狗狗」明显更准；每句多约 0.26 秒。加词表 context 没有提升，不加。
+  Qwen3ASRFlash:
+    type: qwen3_asr_flash
+    api_key: __ASR_API_KEY__
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    model_name: qwen3-asr-flash
+    output_dir: tmp/
+    enable_lid: true
+    enable_itn: true
+    context: ""
 
 TTS:
   # 豆包语音合成 2.0，双向流式，首包实测约 0.4–0.5 秒

@@ -74,18 +74,22 @@ def _text(content: str | list | None) -> str:
     return content or ""
 
 
+# SenseVoice 会在识别结果里带情绪/事件表情（😊 😡 🎼 等），不是孩子说的话
+_ASR_EMOJI = re.compile("[\U0001f000-\U0001faff\u2600-\u27bf\ufe0f]")
+
+
 def _user_text(content: str | list | None) -> str:
-    """xiaozhi 开了声纹时会把 user 消息包成 {"speaker": ..., "content": ...}，这里还原成纯文本。"""
+    """还原孩子说的纯文本：拆开 xiaozhi 声纹格式 {"speaker": ..., "content": ...}，去掉 ASR 表情。"""
     text = _text(content)
     stripped = text.strip()
     if stripped.startswith("{") and stripped.endswith("}"):
         try:
             data = json.loads(stripped)
         except ValueError:
-            return text
+            data = None
         if isinstance(data, dict) and isinstance(data.get("content"), str):
-            return data["content"]
-    return text
+            text = data["content"]
+    return _ASR_EMOJI.sub("", text).strip()
 
 
 def history_of(req: ChatRequest) -> list[dict]:
