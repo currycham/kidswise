@@ -1,0 +1,18 @@
+{
+  "description": "Waywise 家长端",
+  "appid": "wxa7e9bd6d8398bc8c",
+  "projectname": "waywise-parent",
+  "compileType": "miniprogram",
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "urlCheck": true
+  },
+  "condition": {},
+  "editorSetting": {
+    "tabIndent": "insertSpaces",
+    "tabSize": 2
+  }
+}

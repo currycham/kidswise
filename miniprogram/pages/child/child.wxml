@@ -1,0 +1,32 @@
+<view class="page">
+  <view class="card" wx:if="{{child}}">
+    <view class="card-title">孩子信息</view>
+    <view class="field">
+      <text class="label">昵称</text>
+      <input class="input" value="{{name}}" placeholder="Mumi 会这样称呼孩子" maxlength="12" bindinput="onNameInput" />
+    </view>
+    <view class="field">
+      <text class="label">年龄</text>
+      <picker range="{{AGES}}" value="{{ageIndex}}" bindchange="onAgeChange">
+        <view class="input">{{AGES[ageIndex]}} 岁 ›</view>
+      </picker>
+    </view>
+    <view class="muted small hint">年龄决定 Mumi 说英文的比例：4 岁以下以中文为主，6 岁以上以英文为主。</view>
+    <view class="btn" bindtap="save">保存</view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">{{child ? '已绑定的设备' : '绑定设备'}}</view>
+    <block wx:if="{{child}}">
+      <view class="muted small device" wx:for="{{child.devices}}" wx:key="*this">{{item}}</view>
+    </block>
+    <view class="muted small hint" wx:if="{{!child}}">扫描 Mumi 附带卡片上的二维码，或者手动输入卡片上的设备码。</view>
+    <view class="field">
+      <input class="input" value="{{deviceId}}" placeholder="设备码" bindinput="onDeviceInput" />
+      <text class="scan" bindtap="scan">扫码</text>
+    </view>
+    <view class="btn {{child ? 'ghost' : ''}}" bindtap="bind">{{child ? '再绑定一台' : '绑定'}}</view>
+  </view>
+
+  <view class="error" wx:if="{{error}}">{{error}}</view>
+</view>

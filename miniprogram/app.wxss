@@ -1,0 +1,60 @@
+/* 家长端：只读为主，信息清楚，暖色 */
+page {
+  --bg: #FFF8EF;
+  --card: #FFFFFF;
+  --ink: #2F2A25;
+  --muted: #8A7F73;
+  --line: #F0E6DA;
+  --accent: #E8702A;
+  --accent-soft: #FDEBDD;
+  --heard: #F4B63F;
+  --heard-soft: #FDF3DC;
+  --said: #3FA66B;
+  --said-soft: #E2F4E9;
+  --alert: #D9534F;
+  --alert-soft: #FBE9E8;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 30rpx;
+  line-height: 1.5;
+}
+.page { padding: 24rpx 32rpx 48rpx; }
+.card {
+  background: var(--card);
+  border-radius: 24rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(120, 90, 60, 0.06);
+}
+.card-title { font-size: 26rpx; color: var(--muted); margin-bottom: 16rpx; }
+.muted { color: var(--muted); }
+.small { font-size: 24rpx; }
+.row { display: flex; align-items: center; }
+.between { justify-content: space-between; }
+.wrap { flex-wrap: wrap; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 10rpx 22rpx;
+  border-radius: 999rpx;
+  margin: 0 16rpx 16rpx 0;
+  font-size: 28rpx;
+  background: var(--accent-soft);
+}
+.chip .zh { color: var(--muted); font-size: 24rpx; margin-left: 8rpx; }
+.chip.heard { background: var(--heard-soft); }
+.chip.said { background: var(--said-soft); }
+.tag { font-size: 22rpx; padding: 2rpx 12rpx; border-radius: 8rpx; margin-left: 10rpx; }
+.tag.heard { color: #9A6B00; background: var(--heard-soft); }
+.tag.said { color: #1E7A47; background: var(--said-soft); }
+.btn {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 999rpx;
+  font-size: 30rpx;
+  padding: 20rpx 0;
+  text-align: center;
+}
+.btn.ghost { background: transparent; color: var(--accent); border: 2rpx solid var(--accent); }
+.empty { text-align: center; padding: 80rpx 0; color: var(--muted); }
+.error { color: var(--alert); text-align: center; padding: 24rpx 0; }

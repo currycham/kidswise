@@ -47,7 +47,18 @@ def get_theme(theme_id: str) -> Theme | None:
     return load_themes().get(theme_id)
 
 
-def find_words(theme: Theme, text: str) -> list[str]:
-    """文本里出现了哪些本主题的目标词（按英文匹配，不分大小写，整词）。"""
+def find_words(theme: Theme | None, text: str) -> list[str]:
+    """文本里出现了哪些目标词（按英文匹配，不分大小写，整词，允许复数 s）。
+
+    先看当前主题，再看其他主题：孩子自己聊到动物园的大象，也算碰到了 elephant。
+    """
     lowered = text.lower()
-    return [w.en for w in theme.words if re.search(rf"(?<![a-z']){re.escape(w.en.lower())}s?(?![a-z'])", lowered)]
+    candidates = list(theme.words) if theme else []
+    for other in load_themes().values():
+        if theme is None or other.theme_id != theme.theme_id:
+            candidates.extend(other.words)
+    found: list[str] = []
+    for w in candidates:
+        if w.en not in found and re.search(rf"(?<![a-z']){re.escape(w.en.lower())}s?(?![a-z'])", lowered):
+            found.append(w.en)
+    return found

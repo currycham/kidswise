@@ -1,0 +1,55 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{error}}" class="error" bindtap="load">{{error}}，点击重试</view>
+
+  <!-- 还没绑定设备 -->
+  <view wx:elif="{{!child}}" class="card welcome">
+    <view class="welcome-title">欢迎来到 Waywise</view>
+    <view class="muted">绑定孩子的 Mumi 之后，这里会显示孩子每天学了什么、说了什么。</view>
+    <view class="btn" bindtap="goBind">绑定设备</view>
+  </view>
+
+  <block wx:else>
+    <!-- 孩子的原话：整个小程序最打动人的元素 -->
+    <view class="card quote" wx:if="{{today.quote}}">
+      <view class="card-title">今天{{child.name}}说</view>
+      <view class="quote-text">“{{today.quote.text}}”</view>
+      <view class="muted small quote-time">{{today.quoteTime}} · 和 Mumi 聊天时</view>
+    </view>
+
+    <view class="card alert" wx:for="{{today.alerts}}" wx:key="created_at">
+      <view class="alert-head">⚠ {{item.time}} {{child.name}}{{item.label}}</view>
+      <view class="muted small">“{{item.text}}” · Mumi 已提醒孩子去找大人</view>
+    </view>
+
+    <view class="card row stats">
+      <view class="stat">
+        <view class="stat-num">{{today.minutes}}</view>
+        <view class="muted small">分钟</view>
+      </view>
+      <view class="stat">
+        <view class="stat-num">{{today.child_turns}}</view>
+        <view class="muted small">句话</view>
+      </view>
+      <view class="stat">
+        <view class="stat-num">{{today.words.length}}</view>
+        <view class="muted small">个英文词</view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="card-title">今天碰到的词</view>
+      <view wx:if="{{today.words.length}}" class="row wrap">
+        <view class="chip {{item.status}}" wx:for="{{today.words}}" wx:key="en">
+          {{item.en}}<text class="zh">{{item.zh}}</text><text class="tag {{item.status}}">{{STATUS_LABEL[item.status]}}</text>
+        </view>
+      </view>
+      <view wx:else class="muted">今天还没有和 Mumi 聊天</view>
+    </view>
+
+    <view class="row between links">
+      <text class="link" bindtap="goHistory">查看完整对话 ›</text>
+      <text class="link muted" bindtap="goBind">孩子信息</text>
+    </view>
+  </block>
+</view>

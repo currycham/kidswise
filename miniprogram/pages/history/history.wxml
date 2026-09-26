@@ -1,0 +1,19 @@
+<view class="page">
+  <picker mode="date" value="{{day}}" end="{{maxDay}}" bindchange="onDayChange">
+    <view class="day-picker">{{day}} ▾</view>
+  </picker>
+
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{error}}" class="error" bindtap="load">{{error}}，点击重试</view>
+  <view wx:elif="{{!child}}" class="empty">还没有绑定设备</view>
+  <view wx:elif="{{!sessions.length}}" class="empty">这一天没有和 Mumi 聊天</view>
+
+  <view class="card" wx:for="{{sessions}}" wx:for-item="s" wx:key="id">
+    <view class="card-title">{{s.time}}</view>
+    <view class="msg {{m.role}}" wx:for="{{s.messages}}" wx:for-item="m" wx:key="at">
+      <view class="who small muted">{{m.role === 'child' ? child.name : 'Mumi'}} · {{m.time}}</view>
+      <view class="bubble">{{m.text}}</view>
+      <view class="blocked small" wx:if="{{m.blocked && m.role === 'child'}}">已由安全规则处理</view>
+    </view>
+  </view>
+</view>

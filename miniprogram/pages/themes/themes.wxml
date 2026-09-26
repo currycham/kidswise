@@ -1,0 +1,23 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{error}}" class="error" bindtap="load">{{error}}，点击重试</view>
+
+  <block wx:else>
+    <view class="muted small intro" wx:if="{{child}}">{{child.name}}现在在学的主题，点一下可以切换</view>
+    <view class="muted small intro" wx:else>绑定设备后可以给孩子选主题</view>
+
+    <view class="card theme {{child && item.id === child.theme_id ? 'current' : ''}}" wx:for="{{themes}}" wx:key="id" data-theme="{{item}}" bindtap="choose">
+      <view class="row between">
+        <view class="theme-name">{{item.name}}</view>
+        <view class="small current-tag" wx:if="{{child && item.id === child.theme_id}}">正在学</view>
+        <view class="small muted" wx:else>{{item.word_count}} 个词</view>
+      </view>
+      <view class="muted small">{{item.sampleText}} …</view>
+    </view>
+
+    <view class="card studio">
+      <view class="studio-title">想给孩子做一个专属主题？</view>
+      <view class="muted small">比如「下周去动物园」。请在电脑上打开 waywise.tech/studio 创建，建好后会出现在这里。</view>
+    </view>
+  </block>
+</view>

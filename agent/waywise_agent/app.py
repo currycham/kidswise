@@ -129,7 +129,7 @@ async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt:
         await rt.memory.flush(session.previous_id, child.id)
 
     child_text = next((m["content"] for m in reversed(history) if m["role"] == "user"), "")
-    said = find_words(theme, child_text) if theme else []
+    said = find_words(theme, child_text)
     # ② 输入安全检查：命中就不走大模型
     verdict = check_input(child_text)
     rt.store.add_message(session.id, "user", child_text, said, blocked=verdict is not None)
@@ -152,7 +152,7 @@ async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt:
 def finish_turn(turn: Turn, reply: str, rt: Runtime) -> None:
     """软件文档 4.1 的 ⑥：落库这轮说了什么、碰到哪些目标词，并安排记忆抽取。"""
     try:
-        heard = find_words(turn.theme, reply) if turn.theme else []
+        heard = find_words(turn.theme, reply)
         rt.store.add_message(turn.session.id, "assistant", reply, heard, blocked=turn.blocked is not None)
         rt.store.record_words(turn.child.id, heard=heard, said=[])
         rt.memory.schedule(turn.session.id, turn.child.id)

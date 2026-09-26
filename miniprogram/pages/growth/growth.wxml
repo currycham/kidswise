@@ -1,0 +1,36 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{error}}" class="error" bindtap="load">{{error}}，点击重试</view>
+  <view wx:elif="{{!child}}" class="empty">还没有绑定设备</view>
+
+  <block wx:else>
+    <view class="card row totals">
+      <view class="total">
+        <view class="total-num said-num">{{counts.said}}</view>
+        <view class="muted small">个词会说了</view>
+      </view>
+      <view class="total">
+        <view class="total-num heard-num">{{counts.heard}}</view>
+        <view class="muted small">个词听过</view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="card-title">这周会说的词 · 孩子自己说出过两次以上</view>
+      <view wx:if="{{said.length}}" class="row wrap">
+        <view class="chip said" wx:for="{{said}}" wx:key="en">{{item.en}}<text class="zh">{{item.zh}}</text></view>
+      </view>
+      <view wx:else class="muted small">还没有，多和 Mumi 聊聊就会有了</view>
+    </view>
+
+    <view class="card">
+      <view class="card-title">这周听过的词 · Mumi 教过，孩子还没说出来</view>
+      <view wx:if="{{heard.length}}" class="row wrap">
+        <view class="chip heard" wx:for="{{heard}}" wx:key="en">{{item.en}}<text class="zh">{{item.zh}}</text></view>
+      </view>
+      <view wx:else class="muted small">这周还没有新词</view>
+    </view>
+
+    <view class="muted small legend" wx:if="{{older}}">另有 {{older}} 个词是更早学的</view>
+  </block>
+</view>

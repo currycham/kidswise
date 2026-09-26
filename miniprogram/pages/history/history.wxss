@@ -1,0 +1,9 @@
+.day-picker { font-size: 34rpx; font-weight: 600; padding: 8rpx 8rpx 24rpx; }
+.msg { margin-bottom: 24rpx; display: flex; flex-direction: column; }
+.msg.child { align-items: flex-end; }
+.msg.mumi { align-items: flex-start; }
+.who { margin-bottom: 6rpx; }
+.bubble { max-width: 82%; padding: 18rpx 24rpx; border-radius: 24rpx; white-space: pre-wrap; }
+.msg.child .bubble { background: var(--accent-soft); border-top-right-radius: 6rpx; }
+.msg.mumi .bubble { background: #F5F1EB; border-top-left-radius: 6rpx; }
+.blocked { color: var(--alert); margin-top: 6rpx; }

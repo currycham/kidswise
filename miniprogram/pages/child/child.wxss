@@ -1,0 +1,7 @@
+.field { display: flex; align-items: center; border-bottom: 2rpx solid var(--line); padding: 20rpx 0; }
+.label { width: 120rpx; color: var(--muted); }
+.input { flex: 1; font-size: 30rpx; }
+.scan { color: var(--accent); padding-left: 24rpx; }
+.hint { margin: 20rpx 0 32rpx; }
+.device { padding: 8rpx 0; }
+.card .btn { margin-top: 32rpx; }

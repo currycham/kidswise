@@ -39,3 +39,12 @@ def test_prompt_teaches_one_new_word_at_a_time():
     prompt = build_system_prompt(child, zoo, word_statuses={"elephant": "heard"})
     assert "已经学过的词（可以放心用来复习）：elephant（大象）" in prompt
     assert "只教这一个）：monkey（猴子）" in prompt
+
+
+def test_find_words_counts_other_themes_and_plurals():
+    from waywise_agent.themes import find_words
+
+    park = load_themes()["park"]
+    assert find_words(park, "Look at the trees and the elephant!") == ["tree", "elephant"]
+    assert find_words(park, "I like pandas") == ["panda"]
+    assert find_words(park, "treehouse") == []

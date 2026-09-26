@@ -1,0 +1,7 @@
+.intro { padding: 0 8rpx 20rpx; }
+.theme { padding: 28rpx 32rpx; }
+.theme.current { border: 2rpx solid var(--accent); }
+.theme-name { font-size: 32rpx; font-weight: 600; }
+.current-tag { color: var(--accent); }
+.studio { background: transparent; box-shadow: none; border: 2rpx dashed var(--line); }
+.studio-title { font-weight: 600; margin-bottom: 8rpx; }

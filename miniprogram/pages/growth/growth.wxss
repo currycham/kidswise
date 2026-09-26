@@ -1,0 +1,5 @@
+.totals { justify-content: space-around; text-align: center; }
+.total-num { font-size: 60rpx; font-weight: 700; }
+.said-num { color: var(--said); }
+.heard-num { color: var(--heard); }
+.legend { text-align: center; }
