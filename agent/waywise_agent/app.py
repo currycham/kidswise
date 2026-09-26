@@ -239,3 +239,8 @@ async def chat_completions(
         "choices": [{"index": 0, "message": {"role": "assistant", "content": text}, "finish_reason": "stop"}],
         "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
     }
+
+
+from .parent_api import router as parent_router  # noqa: E402 — 放在末尾，parent_api 会反向引用 get_runtime
+
+app.include_router(parent_router)

@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     session_idle_s: float = 600
     memory_idle_s: float = 20
 
+    # 家长端小程序
+    wx_appid: str = ""
+    wx_appsecret: str = ""
+    auth_secret: str = ""  # 留空则由 AGENT_API_KEY 派生
+    dev_login: bool = False  # 联调用免微信登录，演示环境必须关
+    timezone: str = "Asia/Shanghai"
+
 
 @lru_cache
 def get_settings() -> Settings:

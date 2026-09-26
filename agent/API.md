@@ -39,6 +39,21 @@ OpenAI Chat Completions 兼容。只给服务器内部的设备接入层（xiaoz
 
 公网可访问：`https://api.waywise.tech/healthz`，返回 `{"ok": true}`。
 
-## 3. 家长端 / 开发者平台：`/api/*`（第 6 天起）
+## 3. 家长端（小程序）：`/api/*`（2026-09-26 加）
 
-公网入口是 `https://api.waywise.tech/api/...`。端点在这里逐个追加，同样只加不改。
+公网入口 `https://api.waywise.tech/api/...`。除登录外都要 `Authorization: Bearer <token>`，
+令牌有效期 30 天，只能访问本家庭的数据（别家孩子一律 404）。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/auth/login` | `{code}`（小程序 `wx.login` 拿到的）→ `{token, children}` |
+| POST | `/api/auth/dev-login` | `{openid}` 免微信登录，仅 `DEV_LOGIN=true` 时存在，演示环境关闭 |
+| POST | `/api/devices` | `{device_id}` 绑定设备；已聊过天的设备连孩子和记录一起搬来；被别家绑定返回 409 |
+| GET | `/api/children` | 本家庭的孩子 `[{id, name, age, theme_id, devices}]` |
+| PATCH | `/api/children/{id}` | `{name?, age?, theme_id?}` 改昵称（≤12 字）、年龄（2–10）、当前主题 |
+| GET | `/api/themes` | 可选主题 `[{id, name, level, word_count, sample}]` |
+| GET | `/api/children/{id}/today` | 首页：`minutes, sessions, child_turns, words[{en,zh,status}], quote{text,at}, alerts[]` |
+| GET | `/api/children/{id}/sessions?day=YYYY-MM-DD` | 对话记录：当天每场的逐句 `{role: child/mumi, text, at, blocked}` |
+| GET | `/api/children/{id}/progress` | 成长：`counts{heard,said}, words[{en, zh, status, this_week}]` |
+
+`status` 取值：`new`（没见过）/ `heard`（听过）/ `said`（会说）。时间戳都是秒，日期按北京时间划分。

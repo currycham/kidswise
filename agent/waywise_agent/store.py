@@ -80,6 +80,12 @@ CREATE TABLE IF NOT EXISTS safety_event (
     region TEXT NOT NULL,
     created_at REAL NOT NULL
 );
+CREATE TABLE IF NOT EXISTS parent (
+    openid TEXT PRIMARY KEY,
+    family_id TEXT NOT NULL REFERENCES family(id),
+    region TEXT NOT NULL,
+    created_at REAL NOT NULL
+);
 CREATE INDEX IF NOT EXISTS idx_session_device ON session(device_id, last_at);
 CREATE INDEX IF NOT EXISTS idx_message_session ON message(session_id, id);
 CREATE INDEX IF NOT EXISTS idx_fact_child ON memory_fact(child_id, id);
@@ -248,6 +254,107 @@ class Store:
     def word_statuses(self, child_id: str) -> dict[str, str]:
         rows = self._q("SELECT word, heard, said FROM word_progress WHERE child_id = ?", (child_id,))
         return {r["word"]: word_status(r["heard"], r["said"]) for r in rows}
+
+
+class BindError(Exception):
+    pass
+
+
+class ParentStore:
+    """家长端（小程序）用到的查询。所有查询都以 family_id 为边界，家长只能看到自己家的数据。"""
+
+    def __init__(self, store: Store):
+        self.s = store
+
+    def family_for_openid(self, openid: str) -> str:
+        rows = self.s._q("SELECT family_id FROM parent WHERE openid = ?", (openid,))
+        if rows:
+            return rows[0]["family_id"]
+        now, family_id = time.time(), _id("fam")
+        self.s._q("INSERT INTO family VALUES (?, ?, ?, ?)", (family_id, None, self.s.region, now))
+        self.s._q("INSERT INTO parent VALUES (?, ?, ?, ?)", (openid, family_id, self.s.region, now))
+        return family_id
+
+    def bind_device(self, family_id: str, device_id: str, default_name: str, default_age: int, default_theme: str) -> str:
+        """把设备绑到这个家庭，返回孩子 id。
+
+        设备已经聊过天（自动建了孩子）：连孩子和聊天记录一起搬过来。
+        设备已属于另一个有家长的家庭：拒绝。
+        """
+        rows = self.s._q(
+            "SELECT d.family_id, d.child_id, EXISTS(SELECT 1 FROM parent p WHERE p.family_id = d.family_id) owned "
+            "FROM device d WHERE d.id = ?",
+            (device_id,),
+        )
+        if not rows:
+            now, child_id = time.time(), _id("child")
+            self.s._q(
+                "INSERT INTO child VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (child_id, family_id, default_name, default_age, default_theme, self.s.region, now),
+            )
+            self.s._q("INSERT INTO device VALUES (?, ?, ?, ?, ?)", (device_id, family_id, child_id, self.s.region, now))
+            return child_id
+        r = rows[0]
+        if r["family_id"] == family_id:
+            return r["child_id"]
+        if r["owned"]:
+            raise BindError("这台设备已经被别的家长绑定了")
+        self.s._q("UPDATE device SET family_id = ?, bound_at = ? WHERE id = ?", (family_id, time.time(), device_id))
+        self.s._q("UPDATE child SET family_id = ? WHERE id = ?", (family_id, r["child_id"]))
+        return r["child_id"]
+
+    def children(self, family_id: str) -> list[dict]:
+        rows = self.s._q(
+            "SELECT c.id, c.name, c.age, c.theme_id, group_concat(d.id) devices FROM child c "
+            "LEFT JOIN device d ON d.child_id = c.id WHERE c.family_id = ? GROUP BY c.id ORDER BY c.created_at",
+            (family_id,),
+        )
+        return [
+            {"id": r["id"], "name": r["name"], "age": r["age"], "theme_id": r["theme_id"],
+             "devices": r["devices"].split(",") if r["devices"] else []}
+            for r in rows
+        ]
+
+    def owns_child(self, family_id: str, child_id: str) -> bool:
+        return bool(self.s._q("SELECT 1 FROM child WHERE id = ? AND family_id = ?", (child_id, family_id)))
+
+    def update_child(self, child_id: str, name: str | None, age: int | None, theme_id: str | None) -> None:
+        for col, val in (("name", name), ("age", age), ("theme_id", theme_id)):
+            if val is not None:
+                self.s._q(f"UPDATE child SET {col} = ? WHERE id = ?", (val, child_id))
+
+    def sessions_between(self, child_id: str, start: float, end: float) -> list[dict]:
+        rows = self.s._q(
+            "SELECT id, started_at, last_at FROM session WHERE child_id = ? AND started_at >= ? AND started_at < ? "
+            "ORDER BY started_at",
+            (child_id, start, end),
+        )
+        return [dict(r) for r in rows]
+
+    def messages_of(self, session_ids: list[str]) -> list[dict]:
+        if not session_ids:
+            return []
+        marks = ",".join("?" * len(session_ids))
+        rows = self.s._q(
+            f"SELECT session_id, role, text, words, blocked, created_at FROM message WHERE session_id IN ({marks}) ORDER BY id",
+            tuple(session_ids),
+        )
+        return [{**dict(r), "words": json.loads(r["words"]), "blocked": bool(r["blocked"])} for r in rows]
+
+    def word_progress(self, child_id: str) -> list[dict]:
+        rows = self.s._q(
+            "SELECT word, heard, said, updated_at FROM word_progress WHERE child_id = ? ORDER BY updated_at DESC",
+            (child_id,),
+        )
+        return [{**dict(r), "status": word_status(r["heard"], r["said"])} for r in rows]
+
+    def alerts(self, child_id: str, since: float) -> list[dict]:
+        rows = self.s._q(
+            "SELECT category, text, created_at FROM safety_event WHERE child_id = ? AND notify_parent = 1 AND created_at >= ? "
+            "ORDER BY id DESC",
+            (child_id, since),
+        )
+        return [dict(r) for r in rows]
 
 
 def _id(prefix: str) -> str:
