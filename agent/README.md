@@ -42,3 +42,5 @@ LLM:
 | `waywise_agent/persona.py` | Mumi 人设 + 教学规则（按年龄调中英比例、一轮一个新词、以问题结尾） |
 | `waywise_agent/llm.py` | 上游 LLM 客户端，主/备自动切换；`mock` 用于无 key 联调 |
 | `waywise_agent/config.py` | 全部配置走环境变量 / `.env` |
+
+接口契约见 [API.md](API.md)（2026-09-26 冻结，只加不改）。

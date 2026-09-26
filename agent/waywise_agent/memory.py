@@ -66,7 +66,7 @@ class MemoryScheduler:
         await self._extract(session_id, child_id)
 
     async def _extract(self, session_id: str, child_id: str) -> None:
-        messages = self.store.session_messages(session_id)
+        messages = self.store.session_messages(session_id, include_blocked=False)
         if not any(m["role"] == "user" for m in messages):
             return
         try:

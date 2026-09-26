@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS message (
     role TEXT NOT NULL,
     text TEXT NOT NULL,
     words TEXT NOT NULL DEFAULT '[]',
+    blocked INTEGER NOT NULL DEFAULT 0,
     region TEXT NOT NULL,
     created_at REAL NOT NULL
 );
@@ -68,6 +69,16 @@ CREATE TABLE IF NOT EXISTS word_progress (
     region TEXT NOT NULL,
     updated_at REAL NOT NULL,
     PRIMARY KEY (child_id, word)
+);
+CREATE TABLE IF NOT EXISTS safety_event (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    child_id TEXT NOT NULL REFERENCES child(id),
+    session_id TEXT NOT NULL REFERENCES session(id),
+    category TEXT NOT NULL,
+    text TEXT NOT NULL,
+    notify_parent INTEGER NOT NULL,
+    region TEXT NOT NULL,
+    created_at REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_session_device ON session(device_id, last_at);
 CREATE INDEX IF NOT EXISTS idx_message_session ON message(session_id, id);
@@ -111,7 +122,14 @@ class Store:
         self._db.execute("PRAGMA journal_mode=WAL")
         self._db.execute("PRAGMA foreign_keys=ON")
         self._db.executescript(SCHEMA)
+        self._migrate()
         self._lock = threading.Lock()
+
+    def _migrate(self) -> None:
+        """给已有数据库补新加的列（CREATE TABLE IF NOT EXISTS 不会改旧表）。"""
+        cols = {r["name"] for r in self._db.execute("PRAGMA table_info(message)")}
+        if "blocked" not in cols:
+            self._db.execute("ALTER TABLE message ADD COLUMN blocked INTEGER NOT NULL DEFAULT 0")
 
     def _q(self, sql: str, args: tuple = ()) -> list[sqlite3.Row]:
         with self._lock:
@@ -164,21 +182,30 @@ class Store:
         )
         return SessionRef(session_id, is_new=True, previous_id=last["id"] if last else None)
 
-    def add_message(self, session_id: str, role: str, text: str, words: list[str]) -> None:
+    def add_message(self, session_id: str, role: str, text: str, words: list[str], blocked: bool = False) -> None:
         now = time.time()
         self._q(
-            "INSERT INTO message (session_id, role, text, words, region, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-            (session_id, role, text, json.dumps(words, ensure_ascii=False), self.region, now),
+            "INSERT INTO message (session_id, role, text, words, blocked, region, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (session_id, role, text, json.dumps(words, ensure_ascii=False), int(blocked), self.region, now),
         )
         self._q("UPDATE session SET last_at = ? WHERE id = ?", (now, session_id))
 
-    def session_messages(self, session_id: str) -> list[dict]:
-        rows = self._q("SELECT role, text FROM message WHERE session_id = ? ORDER BY id", (session_id,))
+    def session_messages(self, session_id: str, include_blocked: bool = True) -> list[dict]:
+        """include_blocked=False：去掉安全层拦下的那一问一答（不进记忆，例如孩子说出的住址）。"""
+        sql = "SELECT role, text FROM message WHERE session_id = ?" + ("" if include_blocked else " AND blocked = 0")
+        rows = self._q(sql + " ORDER BY id", (session_id,))
         return [{"role": r["role"], "text": r["text"]} for r in rows]
 
     def session_extracted(self, session_id: str) -> bool:
         rows = self._q("SELECT extracted FROM session WHERE id = ?", (session_id,))
         return bool(rows and rows[0]["extracted"])
+
+    def add_safety_event(self, child_id: str, session_id: str, category: str, text: str, notify_parent: bool) -> None:
+        self._q(
+            "INSERT INTO safety_event (child_id, session_id, category, text, notify_parent, region, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (child_id, session_id, category, text, int(notify_parent), self.region, time.time()),
+        )
 
     # ---- 跨会话记忆 ----
 

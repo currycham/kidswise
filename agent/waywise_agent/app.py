@@ -15,6 +15,7 @@ from .config import Settings, get_settings
 from .llm import LLMClient, LLMError
 from .memory import MemoryScheduler
 from .persona import ChildProfile, build_system_prompt
+from .safety import Verdict, check_input, safe_stream
 from .store import Child, SessionRef, Store
 from .themes import Theme, find_words, get_theme
 
@@ -111,6 +112,7 @@ class Turn:
     session: SessionRef
     theme: Theme | None
     messages: list[dict]
+    blocked: Verdict | None = None  # 输入层拦下时的固定回复，不走大模型
 
 
 async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt: Runtime) -> Turn:
@@ -128,8 +130,14 @@ async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt:
 
     child_text = next((m["content"] for m in reversed(history) if m["role"] == "user"), "")
     said = find_words(theme, child_text) if theme else []
-    rt.store.add_message(session.id, "user", child_text, said)
+    # ② 输入安全检查：命中就不走大模型
+    verdict = check_input(child_text)
+    rt.store.add_message(session.id, "user", child_text, said, blocked=verdict is not None)
     rt.store.record_words(child.id, heard=[], said=said)
+    if verdict:
+        rt.store.add_safety_event(child.id, session.id, verdict.category, child_text, verdict.notify_parent)
+        log.warning("safety input blocked category=%s session=%s", verdict.category, session.id)
+        return Turn(child, session, theme, [], blocked=verdict)
 
     system = build_system_prompt(
         ChildProfile(name=child.name, age=child.age),
@@ -145,7 +153,7 @@ def finish_turn(turn: Turn, reply: str, rt: Runtime) -> None:
     """软件文档 4.1 的 ⑥：落库这轮说了什么、碰到哪些目标词，并安排记忆抽取。"""
     try:
         heard = find_words(turn.theme, reply) if turn.theme else []
-        rt.store.add_message(turn.session.id, "assistant", reply, heard)
+        rt.store.add_message(turn.session.id, "assistant", reply, heard, blocked=turn.blocked is not None)
         rt.store.record_words(turn.child.id, heard=heard, said=[])
         rt.memory.schedule(turn.session.id, turn.child.id)
     except Exception:  # noqa: BLE001 — 落库失败不能影响孩子听到回答
@@ -180,6 +188,14 @@ async def chat_completions(
     model = settings.agent_model_name
     log.info("chat device=%s session=%s new=%s turns=%d", device_id, turn.session.id, turn.session.is_new, len(messages) - 1)
 
+    async def reply_stream():
+        if turn.blocked:
+            yield turn.blocked.reply
+            return
+        # ⑤ 输出安全检查：按句清洗、拦截、截断
+        async for sentence in safe_stream(llm.stream(messages, **params)):
+            yield sentence
+
     if req.stream:
 
         async def sse():
@@ -196,7 +212,7 @@ async def chat_completions(
             yield chunk({"role": "assistant"})
             reply = ""
             try:
-                async for text in llm.stream(messages, **params):
+                async for text in reply_stream():
                     reply += text
                     yield chunk({"content": text})
             except LLMError as e:
@@ -210,7 +226,7 @@ async def chat_completions(
         return StreamingResponse(sse(), media_type="text/event-stream")
 
     try:
-        text = "".join([t async for t in llm.stream(messages, **params)])
+        text = "".join([t async for t in reply_stream()])
     except LLMError as e:
         log.error("llm failed: %s", e)
         raise HTTPException(status_code=502, detail="upstream llm unavailable")
