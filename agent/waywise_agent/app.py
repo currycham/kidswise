@@ -18,7 +18,15 @@ from .persona import ChildProfile, build_system_prompt
 from .safety import Verdict, check_input, safe_stream
 from .store import Child, SessionRef, Store
 from .themes import Theme, find_words, get_theme
-from .vision import camera_tool_name, drop_fewshot, photo_question, photo_result, tool_call_message, wants_to_show
+from .vision import (
+    camera_tool_name,
+    drop_fewshot,
+    photo_question,
+    photo_result,
+    tool_call_message,
+    wants_to_show,
+    with_photo_note,
+)
 
 log = logging.getLogger("waywise")
 app = FastAPI(title="Waywise Agent")
@@ -97,8 +105,10 @@ def _user_text(content: str | list | None) -> str:
 
 
 # 固件唤醒词：「你好木米」（自编固件）或「你好小智」（原厂固件）。孩子喊它就是在打招呼
+# 「猫咪」是 ASR 对「木米」最常见的误听（板子实测），只在整句就是「你好猫咪」时才当唤醒词
 _WAKE_WORDS = re.compile(
-    r"^(你好|嗨|hi|hello)?[，,\s]*(小智|小志|小知|小治|小致|木米|木咪|慕米|沐米|mumi|mu mi)[。！!？?.\s]*$", re.IGNORECASE
+    r"^(你好|嗨|hi|hello)?[，,\s]*(小智|小志|小知|小治|小致|木米|木咪|慕米|沐米|mumi|mu mi)[。！!？?.\s]*$|^你好[，,\s]*猫咪[。！!？?.\s]*$",
+    re.IGNORECASE,
 )
 
 
@@ -142,6 +152,7 @@ class Turn:
     messages: list[dict]
     blocked: Verdict | None = None  # 输入层拦下时的固定回复，不走大模型
     child_text: str = ""
+    saw_photo: bool = False  # 只有这一轮真拍了照，Mumi 才能说「我看到了」
 
 
 async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt: Runtime) -> Turn:
@@ -194,7 +205,10 @@ async def prepare_photo_turn(req: ChatRequest, device_id: str, seen: str, settin
         seen=seen,
     )
     log.info("photo seen session=%s: %s", session.id, seen[:80])
-    return Turn(child, session, theme, [{"role": "system", "content": system}, *history[-MAX_HISTORY:]])
+    history = history[-MAX_HISTORY:]
+    if history and history[-1]["role"] == "user":
+        history[-1] = {"role": "user", "content": with_photo_note(history[-1]["content"], seen)}
+    return Turn(child, session, theme, [{"role": "system", "content": system}, *history], saw_photo=True)
 
 
 def finish_turn(turn: Turn, reply: str, rt: Runtime) -> None:
@@ -275,7 +289,7 @@ async def chat_completions(
             yield turn.blocked.reply
             return
         # ⑤ 输出安全检查：按句清洗、拦截、截断
-        async for sentence in safe_stream(llm.stream(messages, **params)):
+        async for sentence in safe_stream(llm.stream(messages, **params), may_claim_sight=turn.saw_photo):
             yield sentence
 
     if req.stream:

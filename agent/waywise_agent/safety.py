@@ -92,6 +92,13 @@ _FORMAT = re.compile(r"[*#`_~>|•]|^\s*[-\d]+[.、)]\s*")
 _STAGE = re.compile(r"[（(【\[][^）)】\]]{0,20}[）)】\]]")
 _SENTENCE_END = re.compile(r"[。！？!?…\n]|(?<![A-Z][a-z])\.(?=\s|$)")
 
+# 没拍照的轮次里，Mumi 不能声称自己看到了什么（实测：没拍照时也会说「I see a cup」）
+_CLAIMS_SIGHT = re.compile(
+    r"(\bI (can )?see (a|an|the|some|your|it|that|this|two|three)\b|\bI saw\b|我看到|我看见|我看得到|我瞧见)", re.IGNORECASE
+)
+_QUOTED = re.compile(r"「[^」]*」|“[^”]*”|\"[^\"]*\"")  # 复述孩子的话（「我看到一只狗」）不算 Mumi 声称看见
+NO_SIGHT_REPLY = "我现在看不到哦。把它举到我的小眼睛前面，再问我「你看这是什么」，好吗？"
+
 MAX_SENTENCES = 4  # 「A dog!」这种短句也算一句，所以比 prompt 里的 3 句宽一点
 MAX_CHARS = 120
 FALLBACK_REPLY = "我们换个话题吧！What's your favorite animal? 你最喜欢什么动物？"
@@ -104,17 +111,21 @@ def clean_sentence(sentence: str) -> str:
     return re.sub(r"[ \t]{2,}", " ", s).strip()
 
 
-async def safe_stream(chunks: AsyncIterator[str]) -> AsyncIterator[str]:
+async def safe_stream(chunks: AsyncIterator[str], may_claim_sight: bool = False) -> AsyncIterator[str]:
     """按句缓冲模型输出：逐句清洗、拦截，超长截断。
 
     xiaozhi 本来就按标点切句送 TTS，所以按句缓冲只多等半句话，首包几乎不受影响。
+    may_claim_sight：这一轮真拍了照才为 True，否则「我看到了……」这类句子整句丢掉。
     """
-    buffer, sentences, chars, dropped = "", 0, 0, False
+    buffer, sentences, chars, dropped, sight_dropped = "", 0, 0, False, False
 
     def take(sentence: str) -> str | None:
-        nonlocal sentences, chars, dropped
+        nonlocal sentences, chars, dropped, sight_dropped
         if _OUTPUT_BANNED.search(sentence) or _OUTPUT_UNSAFE_ADVICE.search(sentence):
             dropped = True
+            return None
+        if not may_claim_sight and _CLAIMS_SIGHT.search(_QUOTED.sub("", sentence)):
+            sight_dropped = True
             return None
         cleaned = clean_sentence(sentence)
         if not cleaned or sentences >= MAX_SENTENCES or chars + len(cleaned) > MAX_CHARS:
@@ -131,5 +142,7 @@ async def safe_stream(chunks: AsyncIterator[str]) -> AsyncIterator[str]:
                 yield out + " "
     if buffer.strip() and (out := take(buffer)) is not None:
         yield out
-    if sentences == 0 and dropped:
+    if sentences == 0 and sight_dropped:
+        yield NO_SIGHT_REPLY
+    elif sentences == 0 and dropped:
         yield FALLBACK_REPLY

@@ -13,8 +13,9 @@ import re
 # 孩子想让 Mumi 看东西的说法。宁可漏判也不乱拍：漏了 Mumi 会让孩子描述，乱拍则多等两秒
 _ASK_TO_SEE = re.compile(
     r"(你看(?!起来|上去)|(你|快)看看|看看(这|那|我)|(你|快)?看一下(这|那|我)|快看|你瞧|瞧瞧(这|那|我)|给你看|"
-    r"猜猜这是|猜一猜这|这是什么|那是什么|这个是什么|你能看[见到]|你看得[见到]|你看到了?什么|你看见了?什么|"
-    r"我手里|我拿着|look at (this|that|my|me)|what(?: is|'s) (this|that)|can you see|guess what)",
+    r"猜猜这是|猜一猜这|这是什么|那是什么|这个是什么|能看[见到]|看得[见到]|看到了?什么|看见了?什么|"
+    r"我手(里|上)|手(里|上)(有|拿|是)|我拿(着|的)|拿的(是)?什么|"
+    r"look at (this|that|my|me)|what(?: is|'s) (this|that)|can you see|what do you see|guess what)",
     re.IGNORECASE,
 )
 
@@ -23,6 +24,13 @@ CAMERA_TOOL = re.compile(r"camera.*take_photo", re.IGNORECASE)
 
 def wants_to_show(text: str) -> bool:
     return bool(_ASK_TO_SEE.search(text))
+
+
+def with_photo_note(child_text: str, seen: str) -> str:
+    """把这次的画面描述贴在孩子这句话后面：放在最后，模型才不会被前面聊过的东西带偏。"""
+    if not seen:
+        return f"{child_text}\n（Mumi 这次拍的照片没看清。）"
+    return f"{child_text}\n（Mumi 刚刚用摄像头看到：{seen}。只根据这一次的画面回答，之前看到的东西都不算。）"
 
 
 def camera_tool_name(tools: list | None) -> str | None:

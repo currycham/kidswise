@@ -50,7 +50,8 @@ def post(client, messages, stream=False, tools=TOOLS):
     return client.post("/v1/chat/completions", headers=AUTH, json={"messages": messages, "tools": tools, "stream": stream})
 
 
-@pytest.mark.parametrize("text", ["你看这是什么", "猜猜这是什么？", "你能看到我手里的东西吗", "Look at this!", "what's this", "你看看我画的"])
+@pytest.mark.parametrize("text", ["你看这是什么", "猜猜这是什么？", "你能看到我手里的东西吗", "Look at this!", "what's this", "你看看我画的",
+                                  "我拿着什么？", "我现在拿的什么？", "你现在能看到什么？", "我手上有什么。", "What do you see?"])
 def test_asks_to_see(text):
     assert wants_to_show(text)
 
@@ -90,7 +91,8 @@ def test_photo_result_becomes_context_for_mumi(env):
     assert reply.startswith("A red apple!")
     system, *history = llm.calls[-1]
     assert "一个红色的苹果" in system["content"] and "我看到了" in system["content"]
-    assert [m["content"] for m in history] == ["你看这是什么"]  # 示例对话、工具消息都不进历史
+    # 示例对话、工具消息都不进历史；画面描述贴在孩子这句话后面
+    assert len(history) == 1 and history[0]["content"].startswith("你看这是什么\n（Mumi 刚刚用摄像头看到：一个红色的苹果")
     # 孩子那句只记一次，Mumi 的回答记下来
     rows = store._q("SELECT role, text FROM message ORDER BY id")
     assert [(r["role"], r["text"]) for r in rows] == [("user", "你看这是什么"), ("assistant", reply)]
@@ -136,3 +138,22 @@ def test_clear_description_with_leaf_is_kept():
     from waywise_agent.vision import _describe
 
     assert _describe(json.dumps({"success": True, "response": "孩子手里拿着一片绿色的树叶"})) == "孩子手里拿着一片绿色的树叶"
+
+
+def test_without_photo_mumi_cannot_claim_to_see(env):
+    client, llm, _ = env
+
+    async def claims(messages, **params):
+        llm.calls.append(messages)
+        yield "I see a cup! 你拿的杯子是白色的吗？"
+
+    llm.stream = claims
+    reply = post(client, [SYSTEM, {"role": "user", "content": "是白色的"}]).json()["choices"][0]["message"]["content"]
+    assert "I see a cup" not in reply and reply == "你拿的杯子是白色的吗？"
+
+    async def only_claim(messages, **params):
+        yield "I see a cup!"
+
+    llm.stream = only_claim
+    reply = post(client, [SYSTEM, {"role": "user", "content": "是白色的"}]).json()["choices"][0]["message"]["content"]
+    assert "看不到" in reply

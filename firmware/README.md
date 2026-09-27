@@ -6,7 +6,7 @@
 |---|---|
 | `CONFIG_OTA_URL` 指向我们的服务器 | 配网时不用再手动填 OTA 地址 |
 | 自定义唤醒词「你好木米」（`ni hao mu mi`，MultiNet7 中文） | 原厂唤醒词是「你好小智」；木米是 Mumi 的中文名 |
-| 摄像头 OV3660，**RGB565 640×480 + 字节序交换** | 板载摄像头，视觉链路要用。YUV422 颜色发紫；RGB565 不交换字节序时画面花掉 |
+| 摄像头 OV3660，**传感器直出 JPEG 1280×720**（`XIAOZHI_CAMERA_ALLOW_JPEG_INPUT`） | 板上不做颜色转换。YUV422 240×240 能认物体但偏紫；RGB565 不交换字节序时画面花掉，交换后仍偏紫 |
 | 关闭 `SEND_WAKE_WORD_DATA` | 否则唤醒词录音会被当成孩子的第一句话去识别（「你好木米」被识别成「你好，猫咪」） |
 
 完整配置见 [`df-s3-ai-cam.config.json`](df-s3-ai-cam.config.json)，它会覆盖上游的 `main/boards/df-s3-ai-cam/config.json`。
