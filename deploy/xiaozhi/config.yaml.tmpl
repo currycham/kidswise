@@ -26,7 +26,23 @@ selected_module:
   LLM: WaywiseAgent
   TTS: DoubaoTTS2   # 出问题时改回 EdgeTTS（免费，但首包 1–2 秒）
   Memory: nomem       # 记忆在 agent 里做
-  Intent: nointent    # 不要 xiaozhi 的工具调用（放音乐、查天气等）
+  # 工具调用模式：为了把设备的拍照工具（self.camera.take_photo）传给 agent。
+  # 是否拍照由 agent 按孩子的话决定；放音乐、查天气等服务端插件一个都不加载（functions 留空）。
+  Intent: function_call
+  VLLM: WaywiseVLLM
+
+Intent:
+  function_call:
+    type: function_call
+    functions: []
+
+# 视觉模型：板子拍的照片在内存里转成一句描述，不落盘（软件文档 4.7）
+VLLM:
+  WaywiseVLLM:
+    type: openai
+    model_name: qwen3-vl-flash
+    url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    api_key: __ASR_API_KEY__
 
 LLM:
   WaywiseAgent:

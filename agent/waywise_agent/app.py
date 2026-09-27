@@ -18,6 +18,7 @@ from .persona import ChildProfile, build_system_prompt
 from .safety import Verdict, check_input, safe_stream
 from .store import Child, SessionRef, Store
 from .themes import Theme, find_words, get_theme
+from .vision import camera_tool_name, drop_fewshot, photo_question, photo_result, tool_call_message, wants_to_show
 
 log = logging.getLogger("waywise")
 app = FastAPI(title="Waywise Agent")
@@ -30,6 +31,8 @@ DEVICE_MARKER = re.compile(r'<waywise-device id="([^"]*)"\s*/>')
 class Message(BaseModel):
     role: str
     content: str | list | None = None
+    tool_calls: list[dict] | None = None
+    tool_call_id: str | None = None
 
 
 class ChatRequest(BaseModel):
@@ -39,6 +42,7 @@ class ChatRequest(BaseModel):
     temperature: float | None = None
     max_tokens: int | None = None
     user: str | None = None
+    tools: list[dict] | None = None  # xiaozhi 工具调用模式下带来的工具（含设备拍照）
 
 
 def get_llm(settings: Settings = Depends(get_settings)) -> LLMClient:
@@ -104,11 +108,11 @@ def _normalize_child(text: str) -> str:
 
 def history_of(req: ChatRequest) -> list[dict]:
     # 设备接入层（xiaozhi）自带的 system prompt 是它自己的人设和工具规则，一律丢弃，只用 Mumi 的。
-    # TODO(第 8 天): 视觉描述接进来时，给它一个明确标记再单独放行。
+    # 工具调用示例、工具调用和工具结果也不进对话历史（拍照结果单独作为画面描述放进 system）。
     return [
         {"role": m.role, "content": _normalize_child(_user_text(m.content)) if m.role == "user" else _text(m.content)}
-        for m in req.messages
-        if m.role in ("user", "assistant")
+        for m in drop_fewshot(req.messages)
+        if m.role in ("user", "assistant") and not m.tool_calls and (m.role == "user" or _text(m.content))
     ]
 
 
@@ -137,6 +141,7 @@ class Turn:
     theme: Theme | None
     messages: list[dict]
     blocked: Verdict | None = None  # 输入层拦下时的固定回复，不走大模型
+    child_text: str = ""
 
 
 async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt: Runtime) -> Turn:
@@ -161,7 +166,7 @@ async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt:
     if verdict:
         rt.store.add_safety_event(child.id, session.id, verdict.category, child_text, verdict.notify_parent)
         log.warning("safety input blocked category=%s session=%s", verdict.category, session.id)
-        return Turn(child, session, theme, [], blocked=verdict)
+        return Turn(child, session, theme, [], blocked=verdict, child_text=child_text)
 
     system = build_system_prompt(
         ChildProfile(name=child.name, age=child.age),
@@ -170,6 +175,25 @@ async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt:
         facts=rt.store.recent_facts(child.id, exclude_session=session.id),
         session_start=session.is_new,
     )
+    return Turn(child, session, theme, [{"role": "system", "content": system}, *history[-MAX_HISTORY:]], child_text=child_text)
+
+
+async def prepare_photo_turn(req: ChatRequest, device_id: str, seen: str, settings: Settings, rt: Runtime) -> Turn:
+    """拍照工具返回后的续答：孩子那句话上一轮已经记过了，这里只把画面描述放进 system prompt。"""
+    history = history_of(req)
+    child = rt.store.child_for_device(
+        device_id, settings.default_child_name, settings.default_child_age, settings.default_theme_id
+    )
+    theme = resolve_theme(rt.store, child.theme_id, settings.default_theme_id)
+    session = rt.store.resolve_session(device_id, child.id, False, settings.session_idle_s)
+    system = build_system_prompt(
+        ChildProfile(name=child.name, age=child.age),
+        theme,
+        word_statuses=rt.store.word_statuses(child.id),
+        facts=rt.store.recent_facts(child.id, exclude_session=session.id),
+        seen=seen,
+    )
+    log.info("photo seen session=%s: %s", session.id, seen[:80])
     return Turn(child, session, theme, [{"role": "system", "content": system}, *history[-MAX_HISTORY:]])
 
 
@@ -182,6 +206,30 @@ def finish_turn(turn: Turn, reply: str, rt: Runtime) -> None:
         rt.memory.schedule(turn.session.id, turn.child.id)
     except Exception:  # noqa: BLE001 — 落库失败不能影响孩子听到回答
         log.exception("finish_turn failed session=%s", turn.session.id)
+
+
+def tool_call_response(call: dict, stream: bool, model: str):
+    """OpenAI 兼容的工具调用回复（流式时按 chat.completion.chunk 的 tool_calls 增量格式）。"""
+    completion_id, created = f"chatcmpl-{uuid.uuid4().hex}", int(time.time())
+    if not stream:
+        return {
+            "id": completion_id, "object": "chat.completion", "created": created, "model": model,
+            "choices": [{"index": 0, "message": {"role": "assistant", "content": None, "tool_calls": [call]},
+                         "finish_reason": "tool_calls"}],
+        }
+
+    def chunk(delta: dict, finish: str | None = None) -> str:
+        body = {"id": completion_id, "object": "chat.completion.chunk", "created": created, "model": model,
+                "choices": [{"index": 0, "delta": delta, "finish_reason": finish}]}
+        return f"data: {json.dumps(body, ensure_ascii=False)}\n\n"
+
+    async def sse():
+        yield chunk({"role": "assistant"})
+        yield chunk({"tool_calls": [{"index": 0, **call}]})
+        yield chunk({}, "tool_calls")
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(sse(), media_type="text/event-stream")
 
 
 @app.get("/healthz")
@@ -203,7 +251,17 @@ async def chat_completions(
     rt: Runtime = Depends(get_runtime),
 ):
     device_id = device_id_of(req, x_device_id)
-    turn = await prepare_turn(req, device_id, settings, rt)
+    seen = photo_result(drop_fewshot(req.messages))
+    if seen is not None:
+        turn = await prepare_photo_turn(req, device_id, seen, settings, rt)
+    else:
+        turn = await prepare_turn(req, device_id, settings, rt)
+        camera = camera_tool_name(req.tools)
+        if camera and not turn.blocked and wants_to_show(turn.child_text):
+            # ④ 视觉：孩子要给 Mumi 看东西 → 让设备拍照，不调大模型
+            call = tool_call_message(camera, photo_question(turn.child_text, turn.child.age), f"call_{uuid.uuid4().hex[:12]}")
+            log.info("photo requested session=%s", turn.session.id)
+            return tool_call_response(call, req.stream, settings.agent_model_name)
     messages = turn.messages
     max_tokens = min(req.max_tokens or settings.llm_max_tokens, settings.llm_max_tokens)
     params = {k: v for k, v in {"temperature": req.temperature, "max_tokens": max_tokens}.items() if v is not None}
@@ -250,7 +308,7 @@ async def chat_completions(
         return StreamingResponse(sse(), media_type="text/event-stream")
 
     try:
-        text = "".join([t async for t in reply_stream()])
+        text = "".join([t async for t in reply_stream()]).strip()
     except LLMError as e:
         log.error("llm failed: %s", e)
         raise HTTPException(status_code=502, detail="upstream llm unavailable")
