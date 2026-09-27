@@ -87,16 +87,20 @@ def photo_result(messages: list) -> str | None:
     return None
 
 
+# 视觉模型说看不清时，当作没拍到：只让 Mumi 请孩子再试，不给它编造的机会（实测它会说出「I see a kite」）
+_UNCLEAR = re.compile(r"(看不清|看不太清|无法辨认|无法识别|模糊|失真|扭曲|太暗|很暗|全黑|过曝)")
+
+
 def _describe(content) -> str:
+    """拍照结果 → 画面描述；返回空串表示没拍清楚。"""
     text = content if isinstance(content, str) else json.dumps(content, ensure_ascii=False)
     try:
         data = json.loads(text)
     except (TypeError, ValueError):
-        return text.strip()
+        data = None
     if isinstance(data, dict):
         if data.get("success") is False:
             return ""
-        for key in ("text", "result", "response", "message", "content"):
-            if isinstance(data.get(key), str):
-                return data[key].strip()
-    return text.strip()
+        text = next((data[k] for k in ("text", "result", "response", "message", "content") if isinstance(data.get(k), str)), text)
+    text = text.strip()
+    return "" if _UNCLEAR.search(text) else text

@@ -119,3 +119,20 @@ def test_no_camera_tool_means_no_photo(env):
     client, llm, _ = env
     post(client, [SYSTEM, {"role": "user", "content": "你看这是什么"}], tools=None)
     assert len(llm.calls) == 1
+
+
+@pytest.mark.parametrize("desc", ["看不清。画面色彩严重失真。", "画面很暗，几乎全黑", "画面里是一个被严重扭曲的物体"])
+def test_unclear_photo_is_treated_as_failed(env, desc):
+    client, llm, _ = env
+    ask = [SYSTEM, {"role": "user", "content": "你看这是什么"}]
+    call = post(client, ask).json()["choices"][0]["message"]["tool_calls"][0]
+    post(client, [*ask, {"role": "assistant", "tool_calls": [call]},
+                  {"role": "tool", "tool_call_id": call["id"], "content": json.dumps({"success": True, "response": desc})}])
+    system = llm.calls[-1][0]["content"]
+    assert "没看清" in system and desc not in system
+
+
+def test_clear_description_with_leaf_is_kept():
+    from waywise_agent.vision import _describe
+
+    assert _describe(json.dumps({"success": True, "response": "孩子手里拿着一片绿色的树叶"})) == "孩子手里拿着一片绿色的树叶"
