@@ -6,7 +6,8 @@
 |---|---|
 | `CONFIG_OTA_URL` 指向我们的服务器 | 配网时不用再手动填 OTA 地址 |
 | 自定义唤醒词「你好木米」（`ni hao mu mi`，MultiNet7 中文） | 原厂唤醒词是「你好小智」；木米是 Mumi 的中文名 |
-| 摄像头按 OV3660 配置 | 板载摄像头，视觉链路要用 |
+| 摄像头 OV3660，**RGB565 640×480** | 板载摄像头，视觉链路要用。YUV422 在这个版本里颜色发紫，240×240 也太小 |
+| 关闭 `SEND_WAKE_WORD_DATA` | 否则唤醒词录音会被当成孩子的第一句话去识别（「你好木米」被识别成「你好，猫咪」） |
 
 完整配置见 [`df-s3-ai-cam.config.json`](df-s3-ai-cam.config.json)，它会覆盖上游的 `main/boards/df-s3-ai-cam/config.json`。
 
@@ -38,6 +39,8 @@ ls /dev/cu.usbmodem*          # 插上板子后多出来的那个
 .venv/bin/esptool --port /dev/cu.usbmodemXXXX erase-flash
 .venv/bin/esptool --port /dev/cu.usbmodemXXXX --baud 921600 write-flash 0x0 merged-binary.bin
 ```
+
+只改固件、想保留 Wi-Fi 配置时，跳过 `erase-flash` 直接 `write-flash`（合并镜像不包含 Wi-Fi 配置所在的分区）。
 
 烧完板子会开 `Xiaozhi-xxxx` 热点，手机连上后填 2.4GHz Wi-Fi 即可（OTA 地址已编进固件）。
 烧不进去只有两种原因：线不是数据线，或者没进下载模式（按住 BOOT，重新插 USB，再松开）。

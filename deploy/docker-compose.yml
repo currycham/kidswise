@@ -35,3 +35,5 @@ services:
     volumes:
       - ./xiaozhi/data:/opt/xiaozhi-esp32-server/data
       - ./xiaozhi/models/SenseVoiceSmall/model.pt:/opt/xiaozhi-esp32-server/models/SenseVoiceSmall/model.pt
+      # 补丁：拍照结果交回 agent（见 deploy/xiaozhi/patches/vision_handler.py 顶部注释处）
+      - ./xiaozhi/patches/vision_handler.py:/opt/xiaozhi-esp32-server/core/api/vision_handler.py:ro
