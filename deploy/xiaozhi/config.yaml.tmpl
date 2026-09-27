@@ -38,6 +38,16 @@ LLM:
       connect: 3
       read: 15
 
+VAD:
+  # 板子实测（2026-09-27）：默认 0.5 / 200ms 下，孩子声音小或句中停顿时漏检，板子在听但服务器一句都没收到。
+  # 调低阈值让小声也能触发；停顿 0.8 秒才算说完，避免一句话被切成碎片。
+  SileroVAD:
+    type: silero
+    threshold: 0.4
+    threshold_low: 0.25
+    model_dir: models/snakers4_silero-vad
+    min_silence_duration_ms: 800
+
 ASR:
   # 真实儿童录音对比（agent/eval/ASR.md）：中文差异 5.1%（SenseVoice 8.3%），英文 25.3%（29.3%），
   # 短句如「画画」「狗狗」明显更准；每句多约 0.26 秒。加词表 context 没有提升，不加。
