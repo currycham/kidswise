@@ -92,8 +92,10 @@ def _user_text(content: str | list | None) -> str:
     return _ASR_EMOJI.sub("", text).strip()
 
 
-# 固件唤醒词（写在板子里，暂时改不了）。孩子喊它就是在打招呼，别让 Mumi 纠结自己叫不叫「小智」
-_WAKE_WORDS = re.compile(r"^(你好|嗨|hi|hello)?[，,\s]*(小智|小志|小知|小治|小致)[。！!？?.\s]*$", re.IGNORECASE)
+# 固件唤醒词：「你好木米」（自编固件）或「你好小智」（原厂固件）。孩子喊它就是在打招呼
+_WAKE_WORDS = re.compile(
+    r"^(你好|嗨|hi|hello)?[，,\s]*(小智|小志|小知|小治|小致|木米|木咪|慕米|沐米|mumi|mu mi)[。！!？?.\s]*$", re.IGNORECASE
+)
 
 
 def _normalize_child(text: str) -> str:
