@@ -1,0 +1,75 @@
+{
+  "theme_id": "tpl_zoo_trip",
+  "name": "下周去动物园",
+  "level": 2,
+  "words": [
+    {
+      "en": "zoo",
+      "zh": "动物园",
+      "difficulty": 1
+    },
+    {
+      "en": "ticket",
+      "zh": "门票",
+      "difficulty": 2
+    },
+    {
+      "en": "monkey",
+      "zh": "猴子",
+      "difficulty": 1
+    },
+    {
+      "en": "elephant",
+      "zh": "大象",
+      "difficulty": 1
+    },
+    {
+      "en": "lion",
+      "zh": "狮子",
+      "difficulty": 1
+    },
+    {
+      "en": "giraffe",
+      "zh": "长颈鹿",
+      "difficulty": 2
+    },
+    {
+      "en": "panda",
+      "zh": "熊猫",
+      "difficulty": 1
+    },
+    {
+      "en": "penguin",
+      "zh": "企鹅",
+      "difficulty": 2
+    },
+    {
+      "en": "feed",
+      "zh": "喂",
+      "difficulty": 2
+    },
+    {
+      "en": "big",
+      "zh": "大",
+      "difficulty": 1
+    },
+    {
+      "en": "small",
+      "zh": "小",
+      "difficulty": 1
+    },
+    {
+      "en": "loud",
+      "zh": "大声",
+      "difficulty": 3
+    }
+  ],
+  "patterns": [
+    "We are going to the zoo!",
+    "Which animal do you want to see?",
+    "Look, the {word}!",
+    "Is the {word} big or small?",
+    "Don't feed the animals."
+  ],
+  "scene_hint": "出发去动物园之前的几天，提前认识会见到的动物；去完回来也可以聊"
+}

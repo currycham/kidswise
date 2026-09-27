@@ -1,0 +1,75 @@
+{
+  "theme_id": "tpl_daily_routine",
+  "name": "早晚好习惯",
+  "level": 1,
+  "words": [
+    {
+      "en": "wake up",
+      "zh": "起床",
+      "difficulty": 1
+    },
+    {
+      "en": "brush",
+      "zh": "刷",
+      "difficulty": 1
+    },
+    {
+      "en": "teeth",
+      "zh": "牙齿",
+      "difficulty": 1
+    },
+    {
+      "en": "wash",
+      "zh": "洗",
+      "difficulty": 1
+    },
+    {
+      "en": "face",
+      "zh": "脸",
+      "difficulty": 1
+    },
+    {
+      "en": "hands",
+      "zh": "手",
+      "difficulty": 1
+    },
+    {
+      "en": "shoes",
+      "zh": "鞋子",
+      "difficulty": 1
+    },
+    {
+      "en": "socks",
+      "zh": "袜子",
+      "difficulty": 1
+    },
+    {
+      "en": "pajamas",
+      "zh": "睡衣",
+      "difficulty": 2
+    },
+    {
+      "en": "bed",
+      "zh": "床",
+      "difficulty": 1
+    },
+    {
+      "en": "good morning",
+      "zh": "早上好",
+      "difficulty": 1
+    },
+    {
+      "en": "good night",
+      "zh": "晚安",
+      "difficulty": 1
+    }
+  ],
+  "patterns": [
+    "Good morning! Time to wake up.",
+    "Let's brush your teeth.",
+    "Wash your hands, please.",
+    "Put on your {word}!",
+    "Good night, sleep tight."
+  ],
+  "scene_hint": "早上起床、出门前、晚上洗漱睡觉，自己的事情自己做"
+}

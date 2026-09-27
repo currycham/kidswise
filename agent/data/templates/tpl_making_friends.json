@@ -1,0 +1,75 @@
+{
+  "theme_id": "tpl_making_friends",
+  "name": "交朋友",
+  "level": 2,
+  "words": [
+    {
+      "en": "hello",
+      "zh": "你好",
+      "difficulty": 1
+    },
+    {
+      "en": "friend",
+      "zh": "朋友",
+      "difficulty": 1
+    },
+    {
+      "en": "name",
+      "zh": "名字",
+      "difficulty": 1
+    },
+    {
+      "en": "play",
+      "zh": "玩",
+      "difficulty": 1
+    },
+    {
+      "en": "share",
+      "zh": "分享",
+      "difficulty": 2
+    },
+    {
+      "en": "together",
+      "zh": "一起",
+      "difficulty": 2
+    },
+    {
+      "en": "sorry",
+      "zh": "对不起",
+      "difficulty": 1
+    },
+    {
+      "en": "it's okay",
+      "zh": "没关系",
+      "difficulty": 2
+    },
+    {
+      "en": "thank you",
+      "zh": "谢谢",
+      "difficulty": 1
+    },
+    {
+      "en": "please",
+      "zh": "请",
+      "difficulty": 1
+    },
+    {
+      "en": "my turn",
+      "zh": "轮到我了",
+      "difficulty": 2
+    },
+    {
+      "en": "let's play",
+      "zh": "我们一起玩吧",
+      "difficulty": 1
+    }
+  ],
+  "patterns": [
+    "Hello! What's your name?",
+    "Do you want to play together?",
+    "Let's share!",
+    "I'm sorry. It's okay!",
+    "Thank you, my friend!"
+  ],
+  "scene_hint": "去幼儿园、见到新朋友、和小朋友一起玩之前练习打招呼、道歉和邀请"
+}

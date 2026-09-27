@@ -7,6 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field, field_validator
 
 THEMES_DIR = Path(__file__).resolve().parent.parent / "data" / "themes"
+TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "data" / "templates"
 
 
 class Word(BaseModel):
@@ -45,6 +46,11 @@ def load_themes(directory: Path = THEMES_DIR) -> dict[str, Theme]:
 
 def get_theme(theme_id: str) -> Theme | None:
     return load_themes().get(theme_id)
+
+
+def load_templates() -> dict[str, Theme]:
+    """开发者平台的十个模板（软件文档 7.2）：家长从模板改，比从空白开始完成率高一个量级。"""
+    return load_themes(TEMPLATES_DIR)
 
 
 def find_words(theme: Theme | None, text: str) -> list[str]:

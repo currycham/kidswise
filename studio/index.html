@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Waywise Studio</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Waywise <span>Studio</span></div>
+    <div class="topbar-right" id="who" hidden>
+      <label>给 <select id="child-select"></select> 做主题</label>
+      <button class="link" id="logout">退出</button>
+    </div>
+  </header>
+
+  <!-- 登录 -->
+  <main id="login-view" class="login" hidden>
+    <h1>为孩子做一个专属英语主题</h1>
+    <p class="muted">打开微信小程序「我的主题」页，点「获取电脑登录码」，把 6 位数字填在这里。</p>
+    <form id="login-form">
+      <input id="code" inputmode="numeric" maxlength="6" placeholder="6 位登录码" autocomplete="one-time-code" />
+      <button class="primary" type="submit">登录</button>
+    </form>
+    <p class="error" id="login-error"></p>
+  </main>
+
+  <!-- 主题列表 + 模板 -->
+  <main id="home-view" hidden>
+    <section>
+      <div class="section-head">
+        <h2>我的主题</h2>
+        <button class="primary" id="new-blank">从空白新建</button>
+      </div>
+      <div id="my-themes" class="cards"></div>
+      <p class="muted" id="no-themes">还没有自己的主题。从下面的模板开始，最快 3 分钟做好一个。</p>
+    </section>
+    <section>
+      <h2>从模板开始</h2>
+      <div id="templates" class="cards"></div>
+    </section>
+  </main>
+
+  <!-- 编辑器 + 预览 -->
+  <main id="edit-view" class="editor" hidden>
+    <div class="edit-pane">
+      <button class="link back" id="back">‹ 返回</button>
+      <label>主题名字
+        <input id="f-name" maxlength="20" placeholder="比如：下周去动物园" />
+      </label>
+      <label>什么时候用
+        <input id="f-scene" maxlength="100" placeholder="比如：出发去动物园之前的几天，提前认识会见到的动物" />
+      </label>
+      <label>难度
+        <select id="f-level">
+          <option value="1">入门（3–4 岁）</option>
+          <option value="2">进阶（5 岁）</option>
+          <option value="3">挑战（6 岁以上）</option>
+        </select>
+      </label>
+      <label>要教的词 <span class="muted">一行一个：英文 + 中文，末尾可加难度 1–3；支持直接粘贴</span>
+        <textarea id="f-words" rows="10" placeholder="elephant 大象&#10;giraffe 长颈鹿 2&#10;dump truck 自卸车 3"></textarea>
+      </label>
+      <p class="hint" id="words-hint"></p>
+      <label>例句（可选） <span class="muted">一行一句，{word} 会换成要教的词</span>
+        <textarea id="f-patterns" rows="4" placeholder="Look at the {word}!&#10;What color is the {word}?"></textarea>
+      </label>
+      <p class="error" id="edit-error"></p>
+      <div class="actions">
+        <button id="save">保存</button>
+        <button class="primary" id="publish">发布给孩子</button>
+        <button class="link danger" id="delete" hidden>删除</button>
+      </div>
+      <p class="ok" id="edit-ok"></p>
+    </div>
+
+    <aside class="preview-pane">
+      <div class="preview-head">
+        <h3>预览：Mumi 会怎么教</h3>
+        <button id="preview-start">重新开始</button>
+      </div>
+      <p class="muted small">用正在编辑的内容直接试，不用先保存，也不会记进孩子的对话记录。</p>
+      <div id="chat" class="chat"></div>
+      <form id="chat-form" class="chat-form">
+        <input id="chat-input" maxlength="200" placeholder="替孩子说一句，比如：我们下周去动物园" />
+        <button type="submit">说</button>
+      </form>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

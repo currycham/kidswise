@@ -134,20 +134,26 @@ def update_child(
     ps: ParentStore = Depends(get_parent_store),
 ):
     if body.theme_id is not None and body.theme_id not in load_themes():
-        raise HTTPException(status_code=400, detail="没有这个主题")
+        from .store import StudioStore
+
+        if not StudioStore(ps.s).owns_theme(family_id, body.theme_id):
+            raise HTTPException(status_code=400, detail="没有这个主题")
     ps.update_child(child_id, body.name, body.age, body.theme_id)
     return next(c for c in ps.children(family_id) if c["id"] == child_id)
 
 
 @router.get("/themes")
-def list_themes(_: str = Depends(current_family)):
-    return {
-        "themes": [
-            {"id": t.theme_id, "name": t.name, "level": t.level, "word_count": len(t.words),
-             "sample": [w.en for w in t.words[:4]]}
-            for t in load_themes().values()
-        ]
-    }
+def list_themes(family_id: str = Depends(current_family), ps: ParentStore = Depends(get_parent_store)):
+    """内置主题 + 本家庭在开发者平台自建的主题（custom=true，排在前面）。"""
+    from .store import StudioStore
+
+    def card(t: dict, custom: bool) -> dict:
+        return {"id": t["theme_id"], "name": t["name"], "level": t["level"], "word_count": len(t["words"]),
+                "sample": [w["en"] for w in t["words"][:4]], "custom": custom}
+
+    mine = [card(t, True) for t in StudioStore(ps.s).themes(family_id)]
+    builtin = [card(t.model_dump(), False) for t in load_themes().values()]
+    return {"themes": mine + builtin}
 
 
 # ---- 四个只读页面 ----

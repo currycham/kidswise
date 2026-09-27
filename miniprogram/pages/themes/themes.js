@@ -1,7 +1,7 @@
 const api = require('../../utils/api')
 
 Page({
-  data: { child: null, themes: [], loading: true, error: '' },
+  data: { child: null, themes: [], loading: true, error: '', loginCode: '' },
 
   onShow() {
     this.load()
@@ -14,6 +14,16 @@ Page({
       this.setData({ loading: false, error: '', child, themes })
     } catch (e) {
       this.setData({ loading: false, error: e.message })
+    }
+  },
+
+  async getLoginCode() {
+    try {
+      const { code } = await api.post('/studio/login-code')
+      this.setData({ loginCode: code, error: '' })
+      wx.setClipboardData({ data: 'waywise.tech/studio', success: () => wx.hideToast() })
+    } catch (e) {
+      this.setData({ error: e.message })
     }
   },
 

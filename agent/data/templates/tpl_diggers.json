@@ -1,0 +1,75 @@
+{
+  "theme_id": "tpl_diggers",
+  "name": "挖掘机和工程车",
+  "level": 2,
+  "words": [
+    {
+      "en": "digger",
+      "zh": "挖掘机",
+      "difficulty": 1
+    },
+    {
+      "en": "truck",
+      "zh": "卡车",
+      "difficulty": 1
+    },
+    {
+      "en": "dump truck",
+      "zh": "自卸车",
+      "difficulty": 2
+    },
+    {
+      "en": "crane",
+      "zh": "吊车",
+      "difficulty": 2
+    },
+    {
+      "en": "bulldozer",
+      "zh": "推土机",
+      "difficulty": 3
+    },
+    {
+      "en": "mixer",
+      "zh": "搅拌车",
+      "difficulty": 3
+    },
+    {
+      "en": "wheel",
+      "zh": "轮子",
+      "difficulty": 1
+    },
+    {
+      "en": "dig",
+      "zh": "挖",
+      "difficulty": 1
+    },
+    {
+      "en": "push",
+      "zh": "推",
+      "difficulty": 1
+    },
+    {
+      "en": "lift",
+      "zh": "吊起来",
+      "difficulty": 2
+    },
+    {
+      "en": "dirt",
+      "zh": "土",
+      "difficulty": 2
+    },
+    {
+      "en": "beep beep",
+      "zh": "嘀嘀",
+      "difficulty": 1
+    }
+  ],
+  "patterns": [
+    "Look, a big {word}!",
+    "The digger can dig!",
+    "Beep beep, here comes the truck!",
+    "What is the crane lifting?",
+    "Let's build a road!"
+  ],
+  "scene_hint": "喜欢工程车的孩子，路过工地或玩车的时候"
+}

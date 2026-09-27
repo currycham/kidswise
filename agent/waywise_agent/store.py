@@ -4,6 +4,7 @@
 """
 
 import json
+import secrets
 import sqlite3
 import threading
 import time
@@ -85,6 +86,19 @@ CREATE TABLE IF NOT EXISTS parent (
     family_id TEXT NOT NULL REFERENCES family(id),
     region TEXT NOT NULL,
     created_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS custom_theme (
+    id TEXT PRIMARY KEY,
+    family_id TEXT NOT NULL REFERENCES family(id),
+    data TEXT NOT NULL,
+    region TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    updated_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS login_code (
+    code TEXT PRIMARY KEY,
+    family_id TEXT NOT NULL REFERENCES family(id),
+    expires_at REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_session_device ON session(device_id, last_at);
 CREATE INDEX IF NOT EXISTS idx_message_session ON message(session_id, id);
@@ -212,6 +226,10 @@ class Store:
             "VALUES (?, ?, ?, ?, ?, ?, ?)",
             (child_id, session_id, category, text, int(notify_parent), self.region, time.time()),
         )
+
+    def custom_theme(self, theme_id: str) -> dict | None:
+        rows = self._q("SELECT data FROM custom_theme WHERE id = ?", (theme_id,))
+        return json.loads(rows[0]["data"]) if rows else None
 
     # ---- 跨会话记忆 ----
 
@@ -355,6 +373,63 @@ class ParentStore:
             (child_id, since),
         )
         return [dict(r) for r in rows]
+
+
+class StudioStore:
+    """开发者平台：家长自建主题 + 电脑登录码。"""
+
+    CODE_TTL_S = 300
+
+    def __init__(self, store: Store):
+        self.s = store
+
+    def themes(self, family_id: str) -> list[dict]:
+        rows = self.s._q(
+            "SELECT data, updated_at FROM custom_theme WHERE family_id = ? ORDER BY updated_at DESC", (family_id,)
+        )
+        return [{**json.loads(r["data"]), "updated_at": r["updated_at"]} for r in rows]
+
+    def owns_theme(self, family_id: str, theme_id: str) -> bool:
+        return bool(self.s._q("SELECT 1 FROM custom_theme WHERE id = ? AND family_id = ?", (theme_id, family_id)))
+
+    def create_theme(self, family_id: str, theme: dict) -> dict:
+        now, theme_id = time.time(), _id("c").lower()
+        theme = {**theme, "theme_id": theme_id}
+        self.s._q(
+            "INSERT INTO custom_theme VALUES (?, ?, ?, ?, ?, ?)",
+            (theme_id, family_id, json.dumps(theme, ensure_ascii=False), self.s.region, now, now),
+        )
+        return theme
+
+    def update_theme(self, theme_id: str, theme: dict) -> dict:
+        theme = {**theme, "theme_id": theme_id}
+        self.s._q(
+            "UPDATE custom_theme SET data = ?, updated_at = ? WHERE id = ?",
+            (json.dumps(theme, ensure_ascii=False), time.time(), theme_id),
+        )
+        return theme
+
+    def delete_theme(self, theme_id: str) -> None:
+        self.s._q("UPDATE child SET theme_id = NULL WHERE theme_id = ?", (theme_id,))
+        self.s._q("DELETE FROM custom_theme WHERE id = ?", (theme_id,))
+
+    def create_login_code(self, family_id: str) -> str:
+        now = time.time()
+        self.s._q("DELETE FROM login_code WHERE expires_at < ? OR family_id = ?", (now, family_id))
+        for _ in range(20):
+            code = f"{secrets.randbelow(10**6):06d}"
+            if not self.s._q("SELECT 1 FROM login_code WHERE code = ?", (code,)):
+                self.s._q("INSERT INTO login_code VALUES (?, ?, ?)", (code, family_id, now + self.CODE_TTL_S))
+                return code
+        raise RuntimeError("could not allocate login code")
+
+    def consume_login_code(self, code: str) -> str | None:
+        """一次性：用过即删。"""
+        rows = self.s._q("SELECT family_id, expires_at FROM login_code WHERE code = ?", (code,))
+        if not rows:
+            return None
+        self.s._q("DELETE FROM login_code WHERE code = ?", (code,))
+        return rows[0]["family_id"] if rows[0]["expires_at"] >= time.time() else None
 
 
 def _id(prefix: str) -> str:

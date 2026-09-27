@@ -5,3 +5,7 @@
 .current-tag { color: var(--accent); }
 .studio { background: transparent; box-shadow: none; border: 2rpx dashed var(--line); }
 .studio-title { font-weight: 600; margin-bottom: 8rpx; }
+.url { color: var(--accent); }
+.login-code { font-size: 64rpx; font-weight: 700; letter-spacing: 16rpx; text-align: center; margin: 24rpx 0 8rpx; color: var(--accent); }
+.code-btn { margin-top: 24rpx; }
+.mine { font-size: 22rpx; font-weight: 400; color: var(--accent); background: var(--accent-soft); border-radius: 8rpx; padding: 2rpx 10rpx; margin-left: 12rpx; }

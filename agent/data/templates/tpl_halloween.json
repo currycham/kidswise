@@ -1,0 +1,75 @@
+{
+  "theme_id": "tpl_halloween",
+  "name": "万圣节",
+  "level": 2,
+  "words": [
+    {
+      "en": "pumpkin",
+      "zh": "南瓜",
+      "difficulty": 1
+    },
+    {
+      "en": "candy",
+      "zh": "糖果",
+      "difficulty": 1
+    },
+    {
+      "en": "costume",
+      "zh": "装扮服装",
+      "difficulty": 3
+    },
+    {
+      "en": "mask",
+      "zh": "面具",
+      "difficulty": 2
+    },
+    {
+      "en": "witch",
+      "zh": "女巫",
+      "difficulty": 2
+    },
+    {
+      "en": "cat",
+      "zh": "小猫",
+      "difficulty": 1
+    },
+    {
+      "en": "bat",
+      "zh": "蝙蝠",
+      "difficulty": 2
+    },
+    {
+      "en": "moon",
+      "zh": "月亮",
+      "difficulty": 1
+    },
+    {
+      "en": "orange",
+      "zh": "橙色",
+      "difficulty": 1
+    },
+    {
+      "en": "black",
+      "zh": "黑色",
+      "difficulty": 1
+    },
+    {
+      "en": "trick or treat",
+      "zh": "不给糖就捣蛋",
+      "difficulty": 3
+    },
+    {
+      "en": "happy Halloween",
+      "zh": "万圣节快乐",
+      "difficulty": 2
+    }
+  ],
+  "patterns": [
+    "Trick or treat!",
+    "What costume do you want?",
+    "I am a little {word}!",
+    "Look at the big orange pumpkin!",
+    "Happy Halloween!"
+  ],
+  "scene_hint": "万圣节前后，孩子要参加装扮活动或讨糖的时候"
+}

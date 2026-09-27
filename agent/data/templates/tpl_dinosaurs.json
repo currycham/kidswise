@@ -1,0 +1,75 @@
+{
+  "theme_id": "tpl_dinosaurs",
+  "name": "恐龙",
+  "level": 2,
+  "words": [
+    {
+      "en": "dinosaur",
+      "zh": "恐龙",
+      "difficulty": 1
+    },
+    {
+      "en": "T. rex",
+      "zh": "霸王龙",
+      "difficulty": 2
+    },
+    {
+      "en": "egg",
+      "zh": "蛋",
+      "difficulty": 1
+    },
+    {
+      "en": "tail",
+      "zh": "尾巴",
+      "difficulty": 1
+    },
+    {
+      "en": "teeth",
+      "zh": "牙齿",
+      "difficulty": 1
+    },
+    {
+      "en": "claw",
+      "zh": "爪子",
+      "difficulty": 2
+    },
+    {
+      "en": "roar",
+      "zh": "吼叫",
+      "difficulty": 1
+    },
+    {
+      "en": "big",
+      "zh": "大",
+      "difficulty": 1
+    },
+    {
+      "en": "long",
+      "zh": "长",
+      "difficulty": 1
+    },
+    {
+      "en": "sharp",
+      "zh": "尖",
+      "difficulty": 2
+    },
+    {
+      "en": "fossil",
+      "zh": "化石",
+      "difficulty": 3
+    },
+    {
+      "en": "stomp",
+      "zh": "重重地踩",
+      "difficulty": 3
+    }
+  ],
+  "patterns": [
+    "Roar! I am a {word}!",
+    "The dinosaur has a long tail.",
+    "Look at its sharp teeth!",
+    "Can you stomp like a dinosaur?",
+    "Dinosaurs lived a long time ago."
+  ],
+  "scene_hint": "喜欢恐龙的孩子，看恐龙书、玩恐龙玩具、去博物馆的时候"
+}

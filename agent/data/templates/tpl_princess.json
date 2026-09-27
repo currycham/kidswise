@@ -1,0 +1,75 @@
+{
+  "theme_id": "tpl_princess",
+  "name": "公主和城堡",
+  "level": 2,
+  "words": [
+    {
+      "en": "princess",
+      "zh": "公主",
+      "difficulty": 1
+    },
+    {
+      "en": "prince",
+      "zh": "王子",
+      "difficulty": 1
+    },
+    {
+      "en": "castle",
+      "zh": "城堡",
+      "difficulty": 1
+    },
+    {
+      "en": "crown",
+      "zh": "王冠",
+      "difficulty": 2
+    },
+    {
+      "en": "dress",
+      "zh": "裙子",
+      "difficulty": 1
+    },
+    {
+      "en": "king",
+      "zh": "国王",
+      "difficulty": 1
+    },
+    {
+      "en": "queen",
+      "zh": "王后",
+      "difficulty": 1
+    },
+    {
+      "en": "magic",
+      "zh": "魔法",
+      "difficulty": 2
+    },
+    {
+      "en": "dance",
+      "zh": "跳舞",
+      "difficulty": 1
+    },
+    {
+      "en": "pretty",
+      "zh": "漂亮",
+      "difficulty": 1
+    },
+    {
+      "en": "brave",
+      "zh": "勇敢",
+      "difficulty": 2
+    },
+    {
+      "en": "once upon a time",
+      "zh": "很久很久以前",
+      "difficulty": 3
+    }
+  ],
+  "patterns": [
+    "Once upon a time, there was a {word}.",
+    "The princess lives in a castle.",
+    "She wears a pretty crown.",
+    "Let's dance!",
+    "You are so brave!"
+  ],
+  "scene_hint": "喜欢公主故事的孩子，讲故事、玩装扮游戏的时候"
+}

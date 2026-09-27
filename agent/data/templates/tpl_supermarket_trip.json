@@ -1,0 +1,75 @@
+{
+  "theme_id": "tpl_supermarket_trip",
+  "name": "一起去超市",
+  "level": 1,
+  "words": [
+    {
+      "en": "list",
+      "zh": "购物清单",
+      "difficulty": 2
+    },
+    {
+      "en": "cart",
+      "zh": "购物车",
+      "difficulty": 2
+    },
+    {
+      "en": "apple",
+      "zh": "苹果",
+      "difficulty": 1
+    },
+    {
+      "en": "banana",
+      "zh": "香蕉",
+      "difficulty": 1
+    },
+    {
+      "en": "milk",
+      "zh": "牛奶",
+      "difficulty": 1
+    },
+    {
+      "en": "bread",
+      "zh": "面包",
+      "difficulty": 1
+    },
+    {
+      "en": "egg",
+      "zh": "鸡蛋",
+      "difficulty": 1
+    },
+    {
+      "en": "cheese",
+      "zh": "奶酪",
+      "difficulty": 2
+    },
+    {
+      "en": "pay",
+      "zh": "付钱",
+      "difficulty": 2
+    },
+    {
+      "en": "bag",
+      "zh": "袋子",
+      "difficulty": 1
+    },
+    {
+      "en": "one",
+      "zh": "一个",
+      "difficulty": 1
+    },
+    {
+      "en": "two",
+      "zh": "两个",
+      "difficulty": 1
+    }
+  ],
+  "patterns": [
+    "What's on our list?",
+    "Can you find the {word}?",
+    "Put it in the cart!",
+    "How many do we need?",
+    "Let's pay and go home."
+  ],
+  "scene_hint": "去超市前一起列购物清单，或者在超市里找东西"
+}

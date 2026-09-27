@@ -8,7 +8,7 @@
 
     <view class="card theme {{child && item.id === child.theme_id ? 'current' : ''}}" wx:for="{{themes}}" wx:key="id" data-theme="{{item}}" bindtap="choose">
       <view class="row between">
-        <view class="theme-name">{{item.name}}</view>
+        <view class="theme-name">{{item.name}}<text class="mine" wx:if="{{item.custom}}">我做的</text></view>
         <view class="small current-tag" wx:if="{{child && item.id === child.theme_id}}">正在学</view>
         <view class="small muted" wx:else>{{item.word_count}} 个词</view>
       </view>
@@ -17,7 +17,10 @@
 
     <view class="card studio">
       <view class="studio-title">想给孩子做一个专属主题？</view>
-      <view class="muted small">比如「下周去动物园」。请在电脑上打开 waywise.tech/studio 创建，建好后会出现在这里。</view>
+      <view class="muted small">比如「下周去动物园」。在电脑上打开 <text class="url">waywise.tech/studio</text>，输入下面的登录码，从模板改最快 3 分钟。建好后会出现在这里。</view>
+      <view wx:if="{{loginCode}}" class="login-code">{{loginCode}}</view>
+      <view wx:if="{{loginCode}}" class="muted small">5 分钟内有效，只能用一次</view>
+      <view class="btn ghost code-btn" bindtap="getLoginCode">{{loginCode ? '换一个登录码' : '获取电脑登录码'}}</view>
     </view>
   </block>
 </view>

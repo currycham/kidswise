@@ -110,6 +110,16 @@ def device_id_of(req: ChatRequest, header: str | None) -> str:
     return header or req.user or "unknown"
 
 
+def resolve_theme(store: Store, theme_id: str | None, default_id: str) -> Theme | None:
+    """孩子当前主题：内置主题 → 家长在开发者平台自建的主题 → 默认主题。"""
+    if theme_id:
+        if theme := get_theme(theme_id):
+            return theme
+        if data := store.custom_theme(theme_id):
+            return Theme.model_validate(data)
+    return get_theme(default_id)
+
+
 @dataclass
 class Turn:
     child: Child
@@ -125,7 +135,7 @@ async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt:
     child = rt.store.child_for_device(
         device_id, settings.default_child_name, settings.default_child_age, settings.default_theme_id
     )
-    theme = get_theme(child.theme_id or settings.default_theme_id)
+    theme = resolve_theme(rt.store, child.theme_id, settings.default_theme_id)
     # xiaozhi 每次都发整场对话；只有一条孩子的话 = 设备刚连上，新的一场
     first_turn = sum(m["role"] == "user" for m in history) <= 1
     session = rt.store.resolve_session(device_id, child.id, first_turn, settings.session_idle_s)
@@ -248,3 +258,7 @@ async def chat_completions(
 from .parent_api import router as parent_router  # noqa: E402 — 放在末尾，parent_api 会反向引用 get_runtime
 
 app.include_router(parent_router)
+
+from .studio_api import router as studio_router  # noqa: E402
+
+app.include_router(studio_router)

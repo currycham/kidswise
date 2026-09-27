@@ -1,0 +1,75 @@
+{
+  "theme_id": "tpl_christmas",
+  "name": "圣诞节",
+  "level": 2,
+  "words": [
+    {
+      "en": "Christmas tree",
+      "zh": "圣诞树",
+      "difficulty": 2
+    },
+    {
+      "en": "Santa",
+      "zh": "圣诞老人",
+      "difficulty": 1
+    },
+    {
+      "en": "gift",
+      "zh": "礼物",
+      "difficulty": 1
+    },
+    {
+      "en": "star",
+      "zh": "星星",
+      "difficulty": 1
+    },
+    {
+      "en": "snow",
+      "zh": "雪",
+      "difficulty": 1
+    },
+    {
+      "en": "snowman",
+      "zh": "雪人",
+      "difficulty": 2
+    },
+    {
+      "en": "bell",
+      "zh": "铃铛",
+      "difficulty": 2
+    },
+    {
+      "en": "sock",
+      "zh": "袜子",
+      "difficulty": 1
+    },
+    {
+      "en": "red",
+      "zh": "红色",
+      "difficulty": 1
+    },
+    {
+      "en": "green",
+      "zh": "绿色",
+      "difficulty": 1
+    },
+    {
+      "en": "Merry Christmas",
+      "zh": "圣诞快乐",
+      "difficulty": 2
+    },
+    {
+      "en": "wish",
+      "zh": "愿望",
+      "difficulty": 3
+    }
+  ],
+  "patterns": [
+    "Merry Christmas!",
+    "What gift do you want?",
+    "Let's put a star on the tree.",
+    "Jingle bells, jingle bells!",
+    "Thank you for the gift!"
+  ],
+  "scene_hint": "圣诞节前后，装饰圣诞树、拆礼物的时候"
+}

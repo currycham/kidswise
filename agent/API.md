@@ -57,3 +57,19 @@ OpenAI Chat Completions 兼容。只给服务器内部的设备接入层（xiaoz
 | GET | `/api/children/{id}/progress` | 成长：`counts{heard,said}, words[{en, zh, status, this_week}]` |
 
 `status` 取值：`new`（没见过）/ `heard`（听过）/ `said`（会说）。时间戳都是秒，日期按北京时间划分。
+
+## 4. 开发者平台：`/api/studio/*`（2026-09-26 加）
+
+页面在 `https://waywise.tech/studio/`，同域调用 `https://waywise.tech/api/...`（与 `api.waywise.tech` 等价）。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/studio/login-code` | 小程序调用（带家长令牌）→ `{code, expires_in}`，6 位数字，5 分钟有效、一次性 |
+| POST | `/api/studio/login` | `{code}` → `{token, children}`，与小程序同一个家庭；同一 IP 10 分钟错 10 次返回 429 |
+| GET | `/api/studio/templates` | 十个模板（完整主题 JSON） |
+| GET | `/api/studio/themes` | 本家庭自建的主题 |
+| POST / PUT / DELETE | `/api/studio/themes[/{id}]` | 建、改、删；3–30 个词，句式只能用 `{word}` 占位；删除后正在用它的孩子回到默认主题 |
+| POST | `/api/studio/themes/{id}/apply` | `{child_id}` 发布：设为孩子当前主题，下一句话起生效 |
+| POST | `/api/studio/preview` | `{theme, child_id?, turns[{role: child/mumi, text}]}` → `{reply, blocked}`；不落库，同样走安全规则 |
+
+自建主题的 id 以 `c_` 开头，会出现在 `GET /api/themes` 的最前面（`custom: true`）。
