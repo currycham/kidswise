@@ -10,9 +10,9 @@
       <view class="row between">
         <view class="theme-name">{{item.name}}<text class="mine" wx:if="{{item.custom}}">我做的</text></view>
         <view class="small current-tag" wx:if="{{child && item.id === child.theme_id}}">正在学</view>
-        <view class="small muted" wx:else>{{item.word_count}} 个词</view>
+        <view class="small muted" wx:else>{{item.domain}}</view>
       </view>
-      <view class="muted small">{{item.sampleText}} …</view>
+      <view class="muted small">{{item.sampleText}}</view>
     </view>
 
     <view class="card studio">

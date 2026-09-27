@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from .config import Settings, get_settings
 from .llm import LLMClient, LLMError
 from .memory import MemoryScheduler
-from .persona import ChildProfile, build_system_prompt
+from .persona import ChildProfile, FamilyValues, build_system_prompt
 from .safety import Verdict, check_input, safe_stream
 from .store import Child, SessionRef, Store
 from .themes import Theme, find_words, get_theme
@@ -112,6 +112,23 @@ _WAKE_WORDS = re.compile(
 )
 
 
+# 孩子在提问（好奇心地图的原料）。只看问句的形态，不判断问得好不好
+_QUESTION = re.compile(
+    r"(为什么|为啥|怎么|怎样|什么|哪[里儿个些]|谁|几[个只岁]|多少|是不是|能不能|会不会|有没有|吗[？?。！!]*$|呢[？?。！!]*$|[？?]\s*$|"
+    r"\b(why|what|how|where|who|when|which)\b)",
+    re.IGNORECASE,
+)
+
+
+def is_question(text: str) -> bool:
+    return len(text.strip()) >= 3 and bool(_QUESTION.search(text))
+
+
+def family_values(store: Store, child_id: str) -> FamilyValues:
+    data = store.family_profile_for_child(child_id)
+    return FamilyValues(**{k: data.get(k, "") for k in ("values", "avoid", "language", "child_traits")})
+
+
 def _normalize_child(text: str) -> str:
     return "你好" if _WAKE_WORDS.match(text.strip()) else text
 
@@ -178,6 +195,8 @@ async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt:
         rt.store.add_safety_event(child.id, session.id, verdict.category, child_text, verdict.notify_parent)
         log.warning("safety input blocked category=%s session=%s", verdict.category, session.id)
         return Turn(child, session, theme, [], blocked=verdict, child_text=child_text)
+    if child_text != "你好" and is_question(child_text):
+        rt.store.add_question(child.id, session.id, child_text)
 
     system = build_system_prompt(
         ChildProfile(name=child.name, age=child.age),
@@ -185,6 +204,7 @@ async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt:
         word_statuses=rt.store.word_statuses(child.id),
         facts=rt.store.recent_facts(child.id, exclude_session=session.id),
         session_start=session.is_new,
+        family=family_values(rt.store, child.id),
     )
     return Turn(child, session, theme, [{"role": "system", "content": system}, *history[-MAX_HISTORY:]], child_text=child_text)
 
@@ -203,6 +223,7 @@ async def prepare_photo_turn(req: ChatRequest, device_id: str, seen: str, settin
         word_statuses=rt.store.word_statuses(child.id),
         facts=rt.store.recent_facts(child.id, exclude_session=session.id),
         seen=seen,
+        family=family_values(rt.store, child.id),
     )
     log.info("photo seen session=%s: %s", session.id, seen[:80])
     history = history[-MAX_HISTORY:]

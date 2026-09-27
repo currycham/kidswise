@@ -149,7 +149,8 @@ def list_themes(family_id: str = Depends(current_family), ps: ParentStore = Depe
 
     def card(t: dict, custom: bool) -> dict:
         return {"id": t["theme_id"], "name": t["name"], "level": t["level"], "word_count": len(t["words"]),
-                "sample": [w["en"] for w in t["words"][:4]], "custom": custom}
+                "sample": [w["en"] for w in t["words"][:4]], "custom": custom,
+                "domain": t.get("domain", "英语"), "goal": t.get("goal", "")}
 
     mine = [card(t, True) for t in StudioStore(ps.s).themes(family_id)]
     builtin = [card(t.model_dump(), False) for t in load_themes().values()]

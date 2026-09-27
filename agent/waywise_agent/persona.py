@@ -12,6 +12,19 @@ class ChildProfile:
     age: int
 
 
+@dataclass
+class FamilyValues:
+    """家庭教育理念档案（家长教育 Agent 方案第四章）。影响 Mumi 的日常说话方式。"""
+
+    values: str = ""  # 我们家最看重的
+    avoid: str = ""  # 我们不想要的
+    language: str = ""  # 对英文的期待
+    child_traits: str = ""  # 孩子的特点
+
+    def is_empty(self) -> bool:
+        return not any((self.values, self.avoid, self.language, self.child_traits))
+
+
 def _language_rule(age: int) -> str:
     if age <= 4:
         return "以中文为主，每句话里只夹一个简单的英文单词。"
@@ -27,8 +40,9 @@ def build_system_prompt(
     facts: list[str] | None = None,
     session_start: bool = False,
     seen: str | None = None,
+    family: FamilyValues | None = None,
 ) -> str:
-    prompt = f"""你是 Mumi（木米），Waywise 的 AI 小伙伴，正在陪一个 {child.age} 岁的中国孩子「{child.name}」聊天，顺便教英文。
+    prompt = f"""你是 Mumi（木米），Waywise 的 AI 小伙伴，正在陪一个 {child.age} 岁的中国孩子「{child.name}」聊天，陪他好奇地认识世界，顺便学英文。
 
 说话规则：
 1. {_language_rule(child.age)}
@@ -39,6 +53,8 @@ def build_system_prompt(
 6. 你的话会被读出来：不要用表情、列表、括号、引号或任何格式符号。
 7. 语气像温柔、好奇的大朋友，多夸具体的地方，不说教。
 8. 英文要地道、语法正确：孩子说自己做了什么，你用 you 回应（You went to the park!），不要说成 I；注意 a / an（an elephant, an apple）。
+9. 好奇心优先：孩子问「为什么」时，多数时候先问一句「你觉得呢？」让他猜一猜，再一起想；从不出题考他。
+10. 夸具体的想法，不夸聪明：不说「你真聪明」，而是说出他哪里想得好（「太阳下班了，这个想法好有意思！」）。
 
 好的回复示例：
 孩子：我看到一只小狗
@@ -53,6 +69,8 @@ def build_system_prompt(
 - 不索要住址、电话、学校等个人信息。
 - 孩子说受伤、害怕、被欺负时，先安慰，再建议马上告诉爸爸妈妈或老师。
 - 涉及安全常识时只说正确做法，不确定就让孩子问爸爸妈妈：打雷下雨待在屋里，不躲到大树下；过马路要牵大人的手；不碰火、电、插座和药；不去水边。"""
+    if family and not family.is_empty():
+        prompt += "\n\n" + _family_section(family)
     if theme:
         prompt += "\n\n" + _theme_section(theme, word_statuses or {})
     if facts:
@@ -73,7 +91,48 @@ def _seen_section(seen: str) -> str:
     )
 
 
+def _family_section(family: FamilyValues) -> str:
+    lines = ["这个家庭的教育理念（照着做，但不要在对话里说出来）："]
+    if family.values:
+        lines.append(f"- 最看重：{family.values}")
+    if family.avoid:
+        lines.append(f"- 不想要：{family.avoid}")
+    if family.language:
+        lines.append(f"- 对英文的期待：{family.language}")
+    if family.child_traits:
+        lines.append(f"- 孩子的特点：{family.child_traits}")
+    return "\n".join(lines)
+
+
 def _theme_section(theme: Theme, statuses: dict[str, str]) -> str:
+    if theme.is_exploration:
+        return _exploration_section(theme, statuses)
+    return _word_section(theme, statuses)
+
+
+def _exploration_section(theme: Theme, statuses: dict[str, str]) -> str:
+    lines = [f"家长为孩子定的探索：{theme.name}（{theme.domain}）"]
+    if theme.goal:
+        lines.append(f"想达到的：{theme.goal}")
+    if theme.ideas:
+        lines.append("要点（用括号里孩子听得懂的说法，一次只讲一点点）：" + "；".join(
+            f"{i.idea}（{i.kid_words}）" if i.kid_words else i.idea for i in theme.ideas))
+    if theme.moves:
+        lines.append("探索动作（这次聊天自然地用上一个就好，不要一次全用）：" + "；".join(
+            f"{m.type}：{m.prompt}" for m in theme.moves))
+    fresh = [w for w in sorted(theme.words, key=lambda w: w.difficulty) if statuses.get(w.en, NEW) == NEW]
+    if fresh:
+        lines.append(f"可以顺带教的英文词（只教一个）：{fresh[0].en}（{fresh[0].zh}）")
+    if theme.scene_hint:
+        lines.append(f"适合的时候：{theme.scene_hint}")
+    if theme.avoid:
+        lines.append(f"不要做：{theme.avoid}")
+    lines.append("不要一开口就说出答案：先让孩子猜、试、说，他说完了再一起往下想一小步。")
+    lines.append("这是方向，不是课表：孩子被别的东西吸引了就跟着他，找到自然的机会再带回来。")
+    return "\n".join(lines)
+
+
+def _word_section(theme: Theme, statuses: dict[str, str]) -> str:
     words = sorted(theme.words, key=lambda w: w.difficulty)
     learned = [w for w in words if statuses.get(w.en, NEW) != NEW]
     fresh = [w for w in words if statuses.get(w.en, NEW) == NEW]

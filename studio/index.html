@@ -10,14 +10,16 @@
   <header class="topbar">
     <div class="brand">Waywise <span>Studio</span></div>
     <div class="topbar-right" id="who" hidden>
-      <label>给 <select id="child-select"></select> 做主题</label>
+      <label>为 <select id="child-select"></select></label>
+      <button class="link" id="open-profile">我们家的教育理念</button>
       <button class="link" id="logout">退出</button>
     </div>
   </header>
 
   <!-- 登录 -->
   <main id="login-view" class="login" hidden>
-    <h1>为孩子做一个专属英语主题</h1>
+    <h1>你想让孩子学什么，都可以</h1>
+    <p class="muted">数学、自然、地理、情绪、交朋友、英语……说出你的想法，Waywise 帮你变成孩子身边的一次次探索。</p>
     <p class="muted">打开微信小程序「我的主题」页，点「获取电脑登录码」，把 6 位数字填在这里。</p>
     <form id="login-form">
       <input id="code" inputmode="numeric" maxlength="6" placeholder="6 位登录码" autocomplete="one-time-code" />
@@ -26,46 +28,126 @@
     <p class="error" id="login-error"></p>
   </main>
 
-  <!-- 主题列表 + 模板 -->
+  <!-- 首页 -->
   <main id="home-view" hidden>
-    <section>
-      <div class="section-head">
-        <h2>我的主题</h2>
-        <button class="primary" id="new-blank">从空白新建</button>
+    <section class="ask">
+      <h2>最近想让孩子学点什么、玩点什么？</h2>
+      <p class="muted small">说一句话就行，比如：「他老问为什么天会黑，想借这个让他知道地球在转，但不要直接讲给他听」「想让他对数字有感觉，但不要做题」「下周去自然博物馆，想先让他对恐龙有点概念」</p>
+      <form id="ask-form">
+        <textarea id="ask-input" rows="3" maxlength="300" placeholder="说说你的想法…"></textarea>
+        <div class="actions">
+          <button class="primary" type="submit" id="ask-btn">帮我设计成探索计划</button>
+          <span class="muted small" id="ask-status"></span>
+        </div>
+      </form>
+      <p class="error" id="ask-error"></p>
+    </section>
+
+    <div class="home-grid">
+      <div>
+        <section>
+          <div class="section-head">
+            <h2>我的探索计划</h2>
+            <button id="new-blank">从空白新建</button>
+          </div>
+          <div id="my-themes" class="cards"></div>
+          <p class="muted" id="no-themes">还没有。在上面说一句想法，或者从下面的模板开始。</p>
+        </section>
+        <section>
+          <h2>探索计划模板</h2>
+          <div id="templates-x" class="cards"></div>
+        </section>
+        <section>
+          <h2>英语主题模板</h2>
+          <div id="templates-lang" class="cards"></div>
+        </section>
       </div>
-      <div id="my-themes" class="cards"></div>
-      <p class="muted" id="no-themes">还没有自己的主题。从下面的模板开始，最快 3 分钟做好一个。</p>
-    </section>
-    <section>
-      <h2>从模板开始</h2>
-      <div id="templates" class="cards"></div>
-    </section>
+      <aside class="side">
+        <section class="card-block">
+          <h3>孩子最近问的问题</h3>
+          <p class="muted small">来自他和 Mumi 的聊天。好奇心就藏在这里 —— 也可以拿来当探索计划的起点。</p>
+          <ul id="questions" class="questions"></ul>
+        </section>
+        <section class="card-block">
+          <h3>我们家的教育理念</h3>
+          <p class="muted small" id="profile-summary">还没填写。写下你们看重什么、不想要什么，Mumi 和设计师都会照着来。</p>
+          <button id="open-profile-2">去填写</button>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <!-- 教育理念 -->
+  <main id="profile-view" class="narrow" hidden>
+    <button class="link back" id="profile-back">‹ 返回</button>
+    <h2>我们家的教育理念</h2>
+    <p class="muted">没有标准答案，写你们真实的想法就好。它会影响 Mumi 每天怎么和孩子说话，也会影响设计师起草的每一个计划。随时可以改。</p>
+    <label>我们最看重的
+      <textarea id="p-values" rows="2" maxlength="300" placeholder="比如：好奇心、敢表达、会和别人相处"></textarea>
+    </label>
+    <label>我们不想要的
+      <textarea id="p-avoid" rows="2" maxlength="300" placeholder="比如：刷题、和别的孩子比较、过早学写字"></textarea>
+    </label>
+    <label>对英文的期待
+      <textarea id="p-language" rows="2" maxlength="200" placeholder="比如：希望自然地长出来，不强求"></textarea>
+    </label>
+    <label>孩子的特点
+      <textarea id="p-traits" rows="2" maxlength="300" placeholder="比如：慢热，喜欢恐龙和挖掘机，不喜欢被纠正"></textarea>
+    </label>
+    <div class="actions">
+      <button class="primary" id="profile-save">保存</button>
+      <span class="ok" id="profile-ok"></span>
+    </div>
+    <p class="error" id="profile-error"></p>
   </main>
 
   <!-- 编辑器 + 预览 -->
   <main id="edit-view" class="editor" hidden>
     <div class="edit-pane">
       <button class="link back" id="back">‹ 返回</button>
-      <label>主题名字
-        <input id="f-name" maxlength="20" placeholder="比如：下周去动物园" />
+      <div class="row2">
+        <label>名字
+          <input id="f-name" maxlength="20" placeholder="比如：为什么天会黑" />
+        </label>
+        <label>领域
+          <select id="f-domain">
+            <option>自然</option><option>数学</option><option>地理</option><option>生活</option>
+            <option>情绪</option><option>社交</option><option>艺术</option><option>英语</option><option>其他</option>
+          </select>
+        </label>
+        <label>适合年龄
+          <select id="f-level">
+            <option value="1">3–4 岁</option>
+            <option value="2">5 岁</option>
+            <option value="3">6 岁以上</option>
+          </select>
+        </label>
+      </div>
+      <label>希望孩子能做到什么
+        <input id="f-goal" maxlength="120" placeholder="比如：愿意自己猜原因，知道白天黑夜是地球在转" />
       </label>
-      <label>什么时候用
-        <input id="f-scene" maxlength="100" placeholder="比如：出发去动物园之前的几天，提前认识会见到的动物" />
+      <label>要点 <span class="muted">一行一个：「要点 | 孩子听得懂的说法」</span>
+        <textarea id="f-ideas" rows="3" placeholder="地球在转 | 我们住的地球在慢慢转圈圈"></textarea>
       </label>
-      <label>难度
-        <select id="f-level">
-          <option value="1">入门（3–4 岁）</option>
-          <option value="2">进阶（5 岁）</option>
-          <option value="3">挑战（6 岁以上）</option>
-        </select>
+      <label>探索动作 <span class="muted">一行一个：「猜一猜：Mumi 可以怎么问」。每次聊天 Mumi 会自然地用上一个</span>
+        <textarea id="f-moves" rows="4" placeholder="猜一猜：你觉得太阳晚上去哪儿了？&#10;动手试：和爸爸妈妈拿橘子和手电筒转一转"></textarea>
       </label>
-      <label>要教的词 <span class="muted">一行一个：英文 + 中文，末尾可加难度 1–3；支持直接粘贴</span>
-        <textarea id="f-words" rows="10" placeholder="elephant 大象&#10;giraffe 长颈鹿 2&#10;dump truck 自卸车 3"></textarea>
+      <label>顺带的英文词（可选） <span class="muted">一行一个：英文 + 中文，末尾可加难度 1–3</span>
+        <textarea id="f-words" rows="4" placeholder="earth 地球&#10;sun 太阳"></textarea>
       </label>
       <p class="hint" id="words-hint"></p>
-      <label>例句（可选） <span class="muted">一行一句，{word} 会换成要教的词</span>
-        <textarea id="f-patterns" rows="4" placeholder="Look at the {word}!&#10;What color is the {word}?"></textarea>
+      <label>什么时候适合聊
+        <input id="f-scene" maxlength="100" placeholder="比如：傍晚、睡前、孩子问起天黑的时候" />
       </label>
+      <label>不要做
+        <input id="f-avoid" maxlength="120" placeholder="比如：不讲时区等超出年龄的概念，除非孩子追问" />
+      </label>
+      <details>
+        <summary class="muted small">英语主题的例句（可选）</summary>
+        <label><span class="muted">一行一句，{word} 会换成要教的词</span>
+          <textarea id="f-patterns" rows="3" placeholder="Look at the {word}!"></textarea>
+        </label>
+      </details>
       <p class="error" id="edit-error"></p>
       <div class="actions">
         <button id="save">保存</button>
@@ -77,13 +159,13 @@
 
     <aside class="preview-pane">
       <div class="preview-head">
-        <h3>预览：Mumi 会怎么教</h3>
+        <h3>预览：Mumi 会怎么陪他聊</h3>
         <button id="preview-start">重新开始</button>
       </div>
       <p class="muted small">用正在编辑的内容直接试，不用先保存，也不会记进孩子的对话记录。</p>
       <div id="chat" class="chat"></div>
       <form id="chat-form" class="chat-form">
-        <input id="chat-input" maxlength="200" placeholder="替孩子说一句，比如：我们下周去动物园" />
+        <input id="chat-input" maxlength="200" placeholder="替孩子说一句，比如：为什么天会黑？" />
         <button type="submit">说</button>
       </form>
     </aside>

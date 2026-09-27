@@ -1,10 +1,14 @@
-"""主题词表（软件文档 4.3）。同一个结构也是开发者平台的数据结构。"""
+"""主题 / 探索计划（软件文档 4.3；家长教育 Agent 方案第三章）。同一个结构也是开发者平台的数据结构。
+
+最早只有词表（words + patterns），只能教单词。现在扩展为探索计划：任何领域都可以，
+有目标、要点（带孩子听得懂的说法）、探索动作；英文词变成可选的一层。内置的十个英语主题照旧可用。
+"""
 
 import re
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 THEMES_DIR = Path(__file__).resolve().parent.parent / "data" / "themes"
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "data" / "templates"
@@ -13,16 +17,45 @@ TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "data" / "templates"
 class Word(BaseModel):
     en: str = Field(min_length=1)
     zh: str = Field(min_length=1)
-    difficulty: int = Field(ge=1, le=3)
+    difficulty: int = Field(default=1, ge=1, le=3)
+
+
+class Idea(BaseModel):
+    """一个要点：大人的说法 + 孩子听得懂的说法。"""
+
+    idea: str = Field(min_length=1, max_length=60)
+    kid_words: str = Field(default="", max_length=80)
+
+
+class Move(BaseModel):
+    """一个探索动作：猜一猜 / 找一找 / 数一数 / 动手试 / 连一连 / 讲给我听……"""
+
+    type: str = Field(min_length=1, max_length=10)
+    prompt: str = Field(min_length=1, max_length=100)
 
 
 class Theme(BaseModel):
     theme_id: str = Field(pattern=r"^[a-z][a-z0-9_]*$")
     name: str
-    level: int = Field(ge=1, le=3)
-    words: list[Word] = Field(min_length=1)
+    level: int = Field(default=1, ge=1, le=3)
+    domain: str = "英语"
+    goal: str = ""
+    ideas: list[Idea] = []
+    moves: list[Move] = []
+    words: list[Word] = []
     patterns: list[str] = []
     scene_hint: str = ""
+    avoid: str = ""
+
+    @model_validator(mode="after")
+    def has_something_to_teach(self) -> "Theme":
+        if not (self.words or self.ideas or self.moves):
+            raise ValueError("至少要有要教的词、要点或探索动作中的一样")
+        return self
+
+    @property
+    def is_exploration(self) -> bool:
+        return bool(self.ideas or self.moves)
 
     @field_validator("patterns")
     @classmethod

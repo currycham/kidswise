@@ -73,3 +73,26 @@ OpenAI Chat Completions 兼容。只给服务器内部的设备接入层（xiaoz
 | POST | `/api/studio/preview` | `{theme, child_id?, turns[{role: child/mumi, text}]}` → `{reply, blocked}`；不落库，同样走安全规则 |
 
 自建主题的 id 以 `c_` 开头，会出现在 `GET /api/themes` 的最前面（`custom: true`）。
+
+## 5. 家长教育 Agent：探索计划、理念档案、孩子的问题（2026-09-27 加）
+
+见 `Waywise_家长教育Agent方案_2026-09-27.md`。主题结构向后兼容地扩展为探索计划：
+
+| 字段 | 说明 |
+|---|---|
+| `domain` | 领域：自然 / 数学 / 地理 / 生活 / 情绪 / 社交 / 艺术 / 英语 / 其他（缺省 英语） |
+| `goal` | 希望孩子能做到什么（≤120 字） |
+| `ideas` | 要点 `[{idea, kid_words}]`，≤8 个 |
+| `moves` | 探索动作 `[{type, prompt}]`，≤8 个，如 猜一猜 / 找一找 / 数一数 / 动手试 |
+| `words` | 英文词，**可选**；纯英语主题至少 3 个 |
+| `avoid` | 不要做什么（≤120 字） |
+
+有 `ideas` 或 `moves` 就是探索计划，Mumi 按「先问再说、跟着孩子走」陪孩子探索；否则按原来的英语主题教单词。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET / PUT | `/api/studio/profile` | 家庭教育理念 `{values, avoid, language, child_traits}`，影响 Mumi 的日常说话方式和设计师 |
+| GET | `/api/studio/questions?child_id=` | 孩子最近在聊天里问的问题（最多 30 条） |
+| POST | `/api/studio/draft` | `{idea, child_id?}` → 探索计划草稿（不保存）。用孩子的记忆、最近的提问和理念档案；模型 `DESIGNER_MODEL`；涉及安全的想法返回 400 |
+
+`GET /api/themes` 的每一项加了 `domain`、`goal`。

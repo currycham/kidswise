@@ -48,10 +48,13 @@ def studio_login(client, phone):
     return {"Authorization": f"Bearer {r.json()['token']}"}, code
 
 
-def test_ten_templates_are_valid():
+def test_templates_are_valid():
     tpl = load_templates()
-    assert len(tpl) == 10
-    assert all(10 <= len(t.words) <= 15 and t.patterns and t.scene_hint for t in tpl.values())
+    language = [t for t in tpl.values() if not t.is_exploration]
+    exploration = [t for t in tpl.values() if t.is_exploration]
+    assert len(language) == 10 and len(exploration) >= 5
+    assert all(10 <= len(t.words) <= 15 and t.patterns and t.scene_hint for t in language)
+    assert all(t.domain != "英语" and t.goal and len(t.ideas) >= 2 and len(t.moves) >= 3 and t.avoid for t in exploration)
 
 
 def test_login_code_is_one_time_and_same_family(env):

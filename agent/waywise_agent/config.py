@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     wx_appsecret: str = ""
     auth_secret: str = ""  # 留空则由 AGENT_API_KEY 派生
     dev_login: bool = False  # 联调用免微信登录，演示环境必须关
+
+    # 家长教育 Agent：设计师起草探索计划用的模型（不在实时对话里，可以用更强的；留空则同 LLM_MODEL）
+    designer_model: str = ""
     timezone: str = "Asia/Shanghai"
 
 

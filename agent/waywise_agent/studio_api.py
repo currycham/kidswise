@@ -4,6 +4,9 @@
 登录：家长在小程序里拿一个 6 位「电脑登录码」，在 waywise.tech/studio 输入（电脑上没法直接用微信身份）。
 """
 
+import json
+import logging
+import re
 import time
 from collections import defaultdict
 
@@ -14,10 +17,12 @@ from .auth import issue_token
 from .config import Settings, get_settings
 from .llm import LLMClient, LLMError
 from .parent_api import current_family, get_parent_store
-from .persona import ChildProfile, build_system_prompt
+from .persona import ChildProfile, FamilyValues, build_system_prompt
 from .safety import check_input, safe_stream
 from .store import ParentStore, StudioStore
-from .themes import Theme, Word, load_templates
+from .themes import Idea, Move, Theme, Word, load_templates
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/studio")
 
@@ -74,13 +79,21 @@ def login_with_code(
 
 
 class ThemeDraft(BaseModel):
-    """编辑中的主题。theme_id 由服务端分配。"""
+    """编辑中的主题 / 探索计划。theme_id 由服务端分配。
+
+    英语主题：至少 3 个词；探索计划：至少一个要点或探索动作，英文词可选。
+    """
 
     name: str = Field(min_length=1, max_length=20)
     level: int = Field(default=1, ge=1, le=3)
-    words: list[Word] = Field(min_length=3, max_length=30)
+    domain: str = Field(default="英语", max_length=10)
+    goal: str = Field(default="", max_length=120)
+    ideas: list[Idea] = Field(default=[], max_length=8)
+    moves: list[Move] = Field(default=[], max_length=8)
+    words: list[Word] = Field(default=[], max_length=30)
     patterns: list[str] = Field(default=[], max_length=10)
     scene_hint: str = Field(default="", max_length=100)
+    avoid: str = Field(default="", max_length=120)
 
     @field_validator("patterns")
     @classmethod
@@ -91,6 +104,8 @@ class ThemeDraft(BaseModel):
         return v
 
     def to_theme(self, theme_id: str = "draft") -> Theme:
+        if not (self.ideas or self.moves) and len(self.words) < 3:
+            raise HTTPException(status_code=422, detail="英语主题至少写 3 个词；或者加上要点、探索动作，做成探索计划")
         try:
             return Theme(theme_id=theme_id, **self.model_dump())
         except ValidationError as e:
@@ -152,6 +167,128 @@ def apply_theme(
 # ---- 预览：平台的灵魂 ----
 
 
+# ---- 家庭教育理念档案 & 孩子的问题 ----
+
+
+class ProfileIn(BaseModel):
+    values: str = Field(default="", max_length=300)
+    avoid: str = Field(default="", max_length=300)
+    language: str = Field(default="", max_length=200)
+    child_traits: str = Field(default="", max_length=300)
+
+
+@router.get("/profile")
+def get_profile(family_id: str = Depends(current_family), ss: StudioStore = Depends(get_studio_store)):
+    return ProfileIn(**ss.s.family_profile(family_id)).model_dump()
+
+
+@router.put("/profile")
+def put_profile(body: ProfileIn, family_id: str = Depends(current_family), ss: StudioStore = Depends(get_studio_store)):
+    ss.s.save_family_profile(family_id, body.model_dump())
+    return body.model_dump()
+
+
+@router.get("/questions")
+def child_questions(child_id: str, family_id: str = Depends(current_family), ps: ParentStore = Depends(get_parent_store)):
+    """孩子最近问的问题：好奇心地图的原料，也给设计师当素材。"""
+    if not ps.owns_child(family_id, child_id):
+        raise HTTPException(status_code=404, detail="没有这个孩子")
+    return {"questions": ps.s.recent_questions(child_id)}
+
+
+# ---- 设计师：家长一句话 → 探索计划草稿 ----
+
+DESIGNER_PROMPT = """你是 Waywise 的「探索计划设计师」。家长会用一句话说出想让孩子学什么、玩什么，
+你把它变成一个 3–6 岁孩子能在日常聊天里玩起来的探索计划。孩子身边的小伙伴 Mumi 会照着它陪孩子聊。
+
+原则：
+- 好奇心优先：重在让孩子愿意猜、愿意问、愿意动手，而不是记住答案；不出题、不考试、不做练习册式的内容
+- 贴合年龄：要点用孩子听得懂的说法（kid_words），超出年龄的概念写进 avoid
+- 探索动作要具体、能在家里或路上随手做：猜一猜、找一找、数一数、动手试、连一连、讲给我听、比一比
+- 贴合这个孩子：用上他感兴趣的东西和他最近问过的问题
+- 照着这个家庭的教育理念来；理念里不想要的，计划里一定不要出现
+- Mumi 是一个不能走动、没有手、看不见（除非孩子让它拍照）的小玩具：需要动手的事让孩子自己做，或者和爸爸妈妈一起做；Mumi 只负责说
+- 安全：不涉及危险操作；需要大人参与的动作写明「和爸爸妈妈一起」
+- 英文词可选：和主题自然相关时给 2–6 个（中英对照），家长明确说学英语时给 8–15 个；不相关就给空数组
+
+只输出一个 JSON 对象，不要任何其他文字，字段如下：
+{"name": "不超过 12 个字的名字",
+ "domain": "数学/自然/地理/生活/情绪/社交/语言/艺术/其他 之一",
+ "level": 1到3的整数（1 适合 3–4 岁，2 适合 5 岁，3 适合 6 岁以上）,
+ "goal": "一句话：希望孩子能做到什么、愿意想什么",
+ "ideas": [{"idea": "要点", "kid_words": "孩子听得懂的说法"}],   // 2–4 个
+ "moves": [{"type": "猜一猜", "prompt": "Mumi 可以怎么问或邀请孩子"}],   // 3–5 个
+ "words": [{"en": "earth", "zh": "地球", "difficulty": 1}],
+ "scene_hint": "什么时候适合聊这个",
+ "avoid": "不要讲什么、不要怎么做"}"""
+
+
+class DraftIn(BaseModel):
+    idea: str = Field(min_length=2, max_length=300)
+    child_id: str | None = None
+
+
+def _designer_llm(settings: Settings) -> LLMClient:
+    if settings.designer_model:
+        return LLMClient(settings.model_copy(update={"llm_model": settings.designer_model, "llm_timeout_s": 30}))
+    return LLMClient(settings.model_copy(update={"llm_timeout_s": 30}))
+
+
+def _parse_plan(text: str) -> dict:
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        raise ValueError("没有找到 JSON")
+    return json.loads(match.group(0))
+
+
+def get_designer(settings: Settings = Depends(get_settings)) -> LLMClient:
+    return _designer_llm(settings)
+
+
+@router.post("/draft")
+async def draft_plan(
+    body: DraftIn,
+    family_id: str = Depends(current_family),
+    settings: Settings = Depends(get_settings),
+    ps: ParentStore = Depends(get_parent_store),
+    designer: LLMClient = Depends(get_designer),
+):
+    """家长说一句话，设计师起草一个探索计划（不保存；家长改完再保存 / 发布）。"""
+    if check_input(body.idea):
+        raise HTTPException(status_code=400, detail="这个想法涉及安全方面的内容，换一个试试吧")
+    child = next((c for c in ps.children(family_id) if c["id"] == body.child_id), None)
+    profile = ps.s.family_profile(family_id)
+    context = [f"家长的想法：{body.idea}"]
+    if child:
+        context.append(f"孩子：{child['name']}，{child['age']} 岁")
+        facts = ps.s.recent_facts(child["id"])
+        if facts:
+            context.append("孩子最近感兴趣、经历过的事：" + "；".join(facts))
+        questions = [q["text"] for q in ps.s.recent_questions(child["id"], limit=12)]
+        if questions:
+            context.append("孩子最近问过的问题：" + "；".join(questions))
+    if any(profile.values()):
+        context.append("这个家庭的教育理念：" + "；".join(f"{k}：{v}" for k, v in profile.items() if v))
+
+    messages = [{"role": "system", "content": DESIGNER_PROMPT}, {"role": "user", "content": "\n".join(context)}]
+    last_error = ""
+    for _ in range(2):  # JSON 不合规时带着错误再试一次
+        try:
+            text = "".join([c async for c in designer.stream(messages, max_tokens=1200, temperature=0.7)])
+        except LLMError:
+            raise HTTPException(status_code=502, detail="设计师暂时没有回应，请稍后再试")
+        try:
+            draft = ThemeDraft(**_parse_plan(text))
+            draft.to_theme()
+            return draft.model_dump()
+        except (ValueError, ValidationError, HTTPException) as e:
+            last_error = getattr(e, "detail", None) or str(e)[:200]
+            log.warning("designer output invalid: %s", last_error)
+            messages += [{"role": "assistant", "content": text},
+                         {"role": "user", "content": f"上面的 JSON 不符合要求：{last_error}。请只输出修正后的 JSON。"}]
+    raise HTTPException(status_code=502, detail="这次没起草好，换个说法再试一次")
+
+
 class Turn(BaseModel):
     role: str = Field(pattern=r"^(child|mumi)$")
     text: str = Field(min_length=1, max_length=200)
@@ -189,7 +326,8 @@ async def preview(
     if verdict := check_input(turns[-1].text):
         return {"reply": verdict.reply, "blocked": verdict.category}
 
-    messages = [{"role": "system", "content": build_system_prompt(profile, theme, statuses, session_start=True)}]
+    family = FamilyValues(**{k: v for k, v in ps.s.family_profile(family_id).items() if k in FamilyValues.__dataclass_fields__})
+    messages = [{"role": "system", "content": build_system_prompt(profile, theme, statuses, session_start=True, family=family)}]
     messages += [{"role": "user" if t.role == "child" else "assistant", "content": t.text} for t in turns]
     try:
         reply = "".join([s async for s in safe_stream(llm.stream(messages, max_tokens=settings.llm_max_tokens))])

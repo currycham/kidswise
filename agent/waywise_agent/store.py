@@ -100,6 +100,21 @@ CREATE TABLE IF NOT EXISTS login_code (
     family_id TEXT NOT NULL REFERENCES family(id),
     expires_at REAL NOT NULL
 );
+CREATE TABLE IF NOT EXISTS family_profile (
+    family_id TEXT PRIMARY KEY REFERENCES family(id),
+    data TEXT NOT NULL,
+    region TEXT NOT NULL,
+    updated_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS child_question (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    child_id TEXT NOT NULL REFERENCES child(id),
+    session_id TEXT NOT NULL REFERENCES session(id),
+    text TEXT NOT NULL,
+    region TEXT NOT NULL,
+    created_at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_question_child ON child_question(child_id, id);
 CREATE INDEX IF NOT EXISTS idx_session_device ON session(device_id, last_at);
 CREATE INDEX IF NOT EXISTS idx_message_session ON message(session_id, id);
 CREATE INDEX IF NOT EXISTS idx_fact_child ON memory_fact(child_id, id);
@@ -226,6 +241,37 @@ class Store:
             "VALUES (?, ?, ?, ?, ?, ?, ?)",
             (child_id, session_id, category, text, int(notify_parent), self.region, time.time()),
         )
+
+    # ---- 家庭教育理念 & 孩子的问题（家长教育 Agent 方案第四、五章）----
+
+    def family_profile(self, family_id: str) -> dict:
+        rows = self._q("SELECT data FROM family_profile WHERE family_id = ?", (family_id,))
+        return json.loads(rows[0]["data"]) if rows else {}
+
+    def family_profile_for_child(self, child_id: str) -> dict:
+        rows = self._q(
+            "SELECT p.data FROM family_profile p JOIN child c ON c.family_id = p.family_id WHERE c.id = ?", (child_id,)
+        )
+        return json.loads(rows[0]["data"]) if rows else {}
+
+    def save_family_profile(self, family_id: str, data: dict) -> None:
+        self._q(
+            "INSERT INTO family_profile VALUES (?, ?, ?, ?) "
+            "ON CONFLICT(family_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at",
+            (family_id, json.dumps(data, ensure_ascii=False), self.region, time.time()),
+        )
+
+    def add_question(self, child_id: str, session_id: str, text: str) -> None:
+        self._q(
+            "INSERT INTO child_question (child_id, session_id, text, region, created_at) VALUES (?, ?, ?, ?, ?)",
+            (child_id, session_id, text, self.region, time.time()),
+        )
+
+    def recent_questions(self, child_id: str, limit: int = 30) -> list[dict]:
+        rows = self._q(
+            "SELECT text, created_at FROM child_question WHERE child_id = ? ORDER BY id DESC LIMIT ?", (child_id, limit)
+        )
+        return [dict(r) for r in rows]
 
     def custom_theme(self, theme_id: str) -> dict | None:
         rows = self._q("SELECT data FROM custom_theme WHERE id = ?", (theme_id,))

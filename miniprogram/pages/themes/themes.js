@@ -10,7 +10,8 @@ Page({
   async load() {
     try {
       const [child, res] = await Promise.all([api.currentChild(), api.get('/themes')])
-      const themes = res.themes.map((t) => ({ ...t, sampleText: t.sample.join(' · ') }))
+      // 探索计划显示目标，英语主题显示几个示例词
+      const themes = res.themes.map((t) => ({ ...t, sampleText: t.goal || `${t.sample.join(' · ')} …` }))
       this.setData({ loading: false, error: '', child, themes })
     } catch (e) {
       this.setData({ loading: false, error: e.message })
