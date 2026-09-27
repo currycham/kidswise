@@ -63,7 +63,7 @@ def test_strips_asr_emotion_emoji():
     assert history_of(req) == [{"role": "user", "content": "我画了一只小狗。"}]
 
 
-@pytest.mark.parametrize("text", ["你好，小志。", "你好小智", "小智", "Hello 小智!", "你好木米", "你好，Mumi。", "hello mumi", "你好，猫咪。"])
+@pytest.mark.parametrize("text", ["你好，小志。", "你好小智", "小智", "Hello 小智!", "你好木米", "你好，Mumi。", "hello mumi", "你好，猫咪。", "你好，木木。"])
 def test_wake_word_becomes_hello(text):
     from waywise_agent.app import ChatRequest, history_of
 

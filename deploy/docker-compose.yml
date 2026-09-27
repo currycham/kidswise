@@ -20,7 +20,9 @@ services:
       - ./agent-state:/app/state   # SQLite 数据库，重建容器不丢
 
   xiaozhi:
-    image: ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest
+    # 官方镜像 + Pillow（白平衡校正用），见 xiaozhi-image/Dockerfile
+    build: ./xiaozhi-image
+    image: waywise-xiaozhi
     container_name: xiaozhi-esp32-server
     restart: always
     depends_on:
@@ -37,3 +39,5 @@ services:
       - ./xiaozhi/models/SenseVoiceSmall/model.pt:/opt/xiaozhi-esp32-server/models/SenseVoiceSmall/model.pt
       # 补丁：拍照结果交回 agent（见 deploy/xiaozhi/patches/vision_handler.py 顶部注释处）
       - ./xiaozhi/patches/vision_handler.py:/opt/xiaozhi-esp32-server/core/api/vision_handler.py:ro
+      # 补丁：设备工具失败时交回 agent，不把错误信息念给孩子
+      - ./xiaozhi/patches/mcp_executor.py:/opt/xiaozhi-esp32-server/core/providers/tools/device_mcp/mcp_executor.py:ro

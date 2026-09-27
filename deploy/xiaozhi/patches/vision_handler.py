@@ -17,6 +17,33 @@ TAG = __name__
 MAX_FILE_SIZE = 5 * 1024 * 1024
 
 
+
+def _white_balance(image_data: bytes, logger) -> bytes:
+    """Waywise 补丁：灰度世界白平衡，只在内存里做，不落盘。
+
+    板载 OV3660 在 YUV422 模式下画面明显偏紫（R、B 偏高，G 偏低），会让视觉模型把白杯子说成紫色。
+    三个通道均值差距不大时原样返回，避免把正常画面调坏。
+    """
+    try:
+        import io
+        from PIL import Image, ImageChops
+
+        img = Image.open(io.BytesIO(image_data)).convert("RGB")
+        means = [sum(i * n for i, n in enumerate(ch.histogram())) / max(img.width * img.height, 1) for ch in img.split()]
+        gray = sum(means) / 3
+        if gray < 8 or max(means) / max(min(means), 1) < 1.12:
+            logger.bind(tag=TAG).info(f"白平衡：通道均值 {[round(m) for m in means]}，无需校正")
+            return image_data
+        gains = [min(gray / max(m, 1), 2.0) for m in means]
+        channels = [ch.point(lambda v, g=g: min(255, int(v * g))) for ch, g in zip(img.split(), gains)]
+        out = io.BytesIO()
+        Image.merge("RGB", channels).save(out, format="JPEG", quality=90)
+        logger.bind(tag=TAG).info(f"白平衡：通道均值 {[round(m) for m in means]}，增益 {[round(g, 2) for g in gains]}")
+        return out.getvalue()
+    except Exception as e:  # 校正失败就用原图，不能影响拍照
+        logger.bind(tag=TAG).warning(f"白平衡跳过: {e}")
+        return image_data
+
 class VisionHandler(BaseHandler):
     def __init__(self, config: dict):
         super().__init__(config)
@@ -98,6 +125,7 @@ class VisionHandler(BaseHandler):
                 )
 
             # 将图片转换为base64编码
+            image_data = _white_balance(image_data, self.logger)  # Waywise 补丁：去掉偏紫
             image_base64 = base64.b64encode(image_data).decode("utf-8")
 
             # 如果开启了智控台，则从智控台获取模型配置
