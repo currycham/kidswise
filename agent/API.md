@@ -96,3 +96,17 @@ OpenAI Chat Completions 兼容。只给服务器内部的设备接入层（xiaoz
 | POST | `/api/studio/draft` | `{idea, child_id?}` → 探索计划草稿（不保存）。用孩子的记忆、最近的提问和理念档案；模型 `DESIGNER_MODEL`；涉及安全的想法返回 400 |
 
 `GET /api/themes` 的每一项加了 `domain`、`goal`。
+
+## 6. 顾问与好奇心周报（2026-09-27 加，家长教育 Agent 第二步）
+
+网页和小程序共用家长令牌。模型用 `DESIGNER_MODEL`（低频、看重质量）。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/advisor/chat` | `{text, child_id?, stream?}`。顾问带着这个孩子的上下文回答：理念档案、Mumi 记得的事、近 7 天的问题 / 原话 / 聊天量、正在进行的探索、安全提醒。`stream=false` 返回 `{text, plan_idea}`；`stream=true` 返回 SSE：多个 `{"delta"}`，最后一个 `{"done": true, text, plan_idea}`。`plan_idea` 是可以直接交给设计师的一句话，没有就是 null |
+| GET | `/api/advisor/history?child_id=` | 最近 40 条对话 `[{role: parent/advisor, text, plan_idea, at}]` |
+| DELETE | `/api/advisor/history?child_id=` | 清空对话 |
+| GET | `/api/children/{id}/weekly?week=YYYY-MM-DD` | 好奇心周报（周一开始，缺省本周）：`{week_start, stats, summary, topics[{topic, questions}], highlights[{quote, why}], notice[], next[{idea, plan_idea}], empty}`。这周没聊过天时不调模型；本周报告一小时内不重复生成 |
+
+顾问的边界写在 `waywise_agent/advisor.py` 的 `ADVISOR_PROMPT`：给选项不给唯一答案、说依据也说不确定、不编造出处、
+不推荐具体书名 / App、不诊断、不比较不打分。

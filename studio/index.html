@@ -11,6 +11,8 @@
     <div class="brand">Waywise <span>Studio</span></div>
     <div class="topbar-right" id="who" hidden>
       <label>为 <select id="child-select"></select></label>
+      <button class="link" id="open-advisor">问顾问</button>
+      <button class="link" id="open-weekly">好奇心周报</button>
       <button class="link" id="open-profile">我们家的教育理念</button>
       <button class="link" id="logout">退出</button>
     </div>
@@ -63,6 +65,11 @@
         </section>
       </div>
       <aside class="side">
+        <section class="card-block advisor-card">
+          <h3>问问顾问</h3>
+          <p class="muted small">有想法但不确定对不对？顾问认识你的孩子 —— 它看得到他最近在问什么、迷什么。</p>
+          <button class="primary" id="open-advisor-2">和顾问聊聊</button>
+        </section>
         <section class="card-block">
           <h3>孩子最近问的问题</h3>
           <p class="muted small">来自他和 Mumi 的聊天。好奇心就藏在这里 —— 也可以拿来当探索计划的起点。</p>
@@ -75,6 +82,30 @@
         </section>
       </aside>
     </div>
+  </main>
+
+  <!-- 顾问 -->
+  <main id="advisor-view" class="narrow advisor" hidden>
+    <button class="link back" id="advisor-back">‹ 返回</button>
+    <div class="section-head">
+      <h2>家庭教育顾问</h2>
+      <button class="link muted" id="advisor-clear">清空对话</button>
+    </div>
+    <p class="muted small">它认识你的孩子，会结合他最近真实的聊天给你几个选项和理由 —— 决定权在你。它不做医学或心理诊断。</p>
+    <div id="advisor-log" class="advisor-log"></div>
+    <div id="advisor-chips" class="chips"></div>
+    <form id="advisor-form" class="chat-form">
+      <textarea id="advisor-input" rows="2" maxlength="800" placeholder="比如：他最近问题特别多，我有时答不上来，该怎么接？"></textarea>
+      <button class="primary" type="submit" id="advisor-send">问</button>
+    </form>
+    <p class="error" id="advisor-error"></p>
+  </main>
+
+  <!-- 好奇心周报 -->
+  <main id="weekly-view" class="narrow" hidden>
+    <button class="link back" id="weekly-back">‹ 返回</button>
+    <h2 id="weekly-title">好奇心周报</h2>
+    <div id="weekly-body"><p class="muted">生成中…</p></div>
   </main>
 
   <!-- 教育理念 -->

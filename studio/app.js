@@ -40,7 +40,7 @@ async function api(path, { method = 'GET', body } = {}) {
 }
 
 // ---- 视图切换 ----
-const VIEWS = ['login-view', 'home-view', 'edit-view', 'profile-view']
+const VIEWS = ['login-view', 'home-view', 'edit-view', 'profile-view', 'advisor-view', 'weekly-view']
 function show(view) {
   for (const v of VIEWS) $(v).hidden = v !== view
   $('who').hidden = view === 'login-view'
@@ -88,6 +88,8 @@ $('child-select').addEventListener('change', (e) => {
   save('studio-child', state.childId)
   if (!$('edit-view').hidden) restartPreview()
   else if (!$('home-view').hidden) renderHome().catch(() => {})
+  else if (!$('advisor-view').hidden) openAdvisor().catch(() => {})
+  else if (!$('weekly-view').hidden) openWeekly().catch(() => {})
 })
 
 // ---- 首页 ----
@@ -158,6 +160,12 @@ $('new-blank').addEventListener('click', () =>
 $('back').addEventListener('click', () => renderHome().catch(showError))
 
 // ---- 设计师：一句话 → 探索计划 ----
+async function draftFromIdea(idea) {
+  const draft = await api('/studio/draft', { method: 'POST', body: { idea, child_id: state.childId } })
+  openEditor(draft, null)
+  $('edit-ok').textContent = '这是设计师起草的计划，改一改、在右边预览，满意了再发布。'
+}
+
 $('ask-form').addEventListener('submit', async (e) => {
   e.preventDefault()
   const idea = $('ask-input').value.trim()
@@ -166,16 +174,222 @@ $('ask-form').addEventListener('submit', async (e) => {
   $('ask-btn').disabled = true
   $('ask-status').textContent = '设计师正在起草，大约十几秒…'
   try {
-    const draft = await api('/studio/draft', { method: 'POST', body: { idea, child_id: state.childId } })
+    await draftFromIdea(idea)
     $('ask-input').value = ''
-    openEditor(draft, null)
-    $('edit-ok').textContent = '这是设计师起草的计划，改一改、在右边预览，满意了再发布。'
   } catch (err) {
     $('ask-error').textContent = err.message
   }
   $('ask-btn').disabled = false
   $('ask-status').textContent = ''
 })
+
+// ---- 顾问 ----
+const ADVISOR_CHIPS = [
+  '这周他在想什么？有什么值得我留意的？',
+  '他最近问题特别多，我有时答不上来，该怎么接？',
+  '5 岁要不要开始学加减法？我不想让他刷题',
+  '他总说「不」，我该怎么回应？',
+]
+
+function advisorBubble(role, text, planIdea) {
+  const el = document.createElement('div')
+  el.className = `msg ${role}`
+  const body = document.createElement('div')
+  body.textContent = text
+  el.append(body)
+  if (planIdea) addPlanButton(el, planIdea)
+  $('advisor-log').append(el)
+  el.scrollIntoView({ block: 'end' })
+  return body
+}
+
+function addPlanButton(el, idea) {
+  const btn = document.createElement('button')
+  btn.className = 'plan-btn'
+  btn.textContent = `把「${idea}」做成探索计划 ›`
+  btn.addEventListener('click', async () => {
+    btn.disabled = true
+    btn.textContent = '设计师正在起草，大约十几秒…'
+    try {
+      await draftFromIdea(idea)
+    } catch (err) {
+      btn.disabled = false
+      btn.textContent = `起草失败：${err.message}，再试一次`
+    }
+  })
+  el.append(btn)
+}
+
+async function openAdvisor() {
+  show('advisor-view')
+  $('advisor-error').textContent = ''
+  const q = state.childId ? `?child_id=${state.childId}` : ''
+  const { messages } = await api(`/advisor/history${q}`)
+  $('advisor-log').innerHTML = ''
+  for (const m of messages) advisorBubble(m.role, m.text, m.plan_idea)
+  $('advisor-chips').innerHTML = ''
+  for (const c of ADVISOR_CHIPS) {
+    const b = document.createElement('button')
+    b.textContent = c
+    b.addEventListener('click', () => askAdvisor(c))
+    $('advisor-chips').append(b)
+  }
+  $('advisor-chips').hidden = messages.length > 0
+}
+
+// 流式读顾问的回答：服务端发 data: {"delta"} … 最后 data: {"done", text, plan_idea}
+async function askAdvisor(text) {
+  $('advisor-error').textContent = ''
+  $('advisor-chips').hidden = true
+  $('advisor-send').disabled = true
+  advisorBubble('parent', text)
+  const body = advisorBubble('advisor', '顾问在看孩子最近的聊天…')
+  const bubble = body.parentElement
+  try {
+    const res = await fetch('/api/advisor/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${load('studio-token')}` },
+      body: JSON.stringify({ text, child_id: state.childId, stream: true }),
+    })
+    if (res.status === 401) return logout()
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || `请求失败（${res.status}）`)
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buf = ''
+    let shown = ''
+    for (;;) {
+      const { value, done } = await reader.read()
+      if (done) break
+      buf += decoder.decode(value, { stream: true })
+      let i
+      while ((i = buf.indexOf('\n\n')) >= 0) {
+        const line = buf.slice(0, i).replace(/^data: /, '')
+        buf = buf.slice(i + 2)
+        const evt = JSON.parse(line)
+        if (evt.error) throw new Error(evt.error)
+        if (evt.delta) {
+          shown += evt.delta
+          body.textContent = shown.replace(/\n?探索计划建议[：:][^\n]*$/, '')
+          bubble.scrollIntoView({ block: 'end' })
+        }
+        if (evt.done) {
+          body.textContent = evt.text
+          if (evt.plan_idea) addPlanButton(bubble, evt.plan_idea)
+        }
+      }
+    }
+  } catch (err) {
+    body.textContent = `（${err.message}）`
+  }
+  $('advisor-send').disabled = false
+}
+
+$('advisor-form').addEventListener('submit', (e) => {
+  e.preventDefault()
+  const text = $('advisor-input').value.trim()
+  if (!text) return
+  $('advisor-input').value = ''
+  askAdvisor(text)
+})
+$('advisor-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault()
+    $('advisor-form').requestSubmit()
+  }
+})
+$('advisor-clear').addEventListener('click', async () => {
+  const q = state.childId ? `?child_id=${state.childId}` : ''
+  await api(`/advisor/history${q}`, { method: 'DELETE' }).catch(() => {})
+  openAdvisor().catch(() => {})
+})
+$('open-advisor').addEventListener('click', () => openAdvisor().catch(() => {}))
+$('open-advisor-2').addEventListener('click', () => openAdvisor().catch(() => {}))
+$('advisor-back').addEventListener('click', () => renderHome().catch(() => {}))
+
+// ---- 好奇心周报 ----
+function block(title, build) {
+  const el = document.createElement('div')
+  el.className = 'weekly-block'
+  const h = document.createElement('h3')
+  h.textContent = title
+  el.append(h)
+  build(el)
+  return el
+}
+
+async function openWeekly() {
+  show('weekly-view')
+  const box = $('weekly-body')
+  if (!state.childId) {
+    box.innerHTML = '<p class="muted">绑定设备后，每周会有一份孩子的好奇心周报。</p>'
+    return
+  }
+  box.innerHTML = '<p class="muted">顾问正在读这一周的聊天，大约十几秒…</p>'
+  try {
+    const r = await api(`/children/${state.childId}/weekly`)
+    $('weekly-title').textContent = `${r.child.name}的好奇心周报 · ${r.week_start} 这一周`
+    box.innerHTML = ''
+    const stats = document.createElement('div')
+    stats.className = 'weekly-stats'
+    for (const [n, label] of [[r.stats.sessions, '次聊天'], [r.stats.minutes, '分钟'], [r.stats.child_turns, '句话'], [r.stats.questions, '个问题']]) {
+      const d = document.createElement('div')
+      d.innerHTML = `<b></b><span class="muted small"></span>`
+      d.querySelector('b').textContent = n
+      d.querySelector('span').textContent = label
+      stats.append(d)
+    }
+    box.append(stats)
+    const summary = document.createElement('p')
+    summary.textContent = r.summary
+    box.append(summary)
+    if (r.empty) return
+    if (r.topics.length) box.append(block('他在问什么', (el) => {
+      for (const t of r.topics) {
+        const p = document.createElement('p')
+        p.innerHTML = '<b></b> <span class="muted"></span>'
+        p.querySelector('b').textContent = t.topic
+        p.querySelector('span').textContent = t.questions.map((q) => `「${q}」`).join(' ')
+        el.append(p)
+      }
+    }))
+    if (r.highlights.length) box.append(block('值得记下来的原话', (el) => {
+      for (const h of r.highlights) {
+        const q = document.createElement('p')
+        q.className = 'quote'
+        q.textContent = `“${h.quote}”`
+        const why = document.createElement('p')
+        why.className = 'muted small'
+        why.textContent = h.why
+        el.append(q, why)
+      }
+    }))
+    if (r.notice.length) box.append(block('可以留意的', (el) => {
+      const ul = document.createElement('ul')
+      for (const n of r.notice) {
+        const li = document.createElement('li')
+        li.textContent = n
+        ul.append(li)
+      }
+      el.append(ul)
+    }))
+    if (r.next.length) box.append(block('下周可以怎么接着玩', (el) => {
+      for (const n of r.next) {
+        const p = document.createElement('p')
+        p.textContent = n.idea
+        el.append(p)
+        if (n.plan_idea) addPlanButton(el, n.plan_idea)
+      }
+    }))
+  } catch (err) {
+    box.innerHTML = ''
+    const p = document.createElement('p')
+    p.className = 'error'
+    p.textContent = err.message
+    box.append(p)
+  }
+}
+$('open-weekly').addEventListener('click', () => openWeekly().catch(() => {}))
+$('weekly-back').addEventListener('click', () => renderHome().catch(() => {}))
 
 // ---- 教育理念 ----
 async function openProfile() {

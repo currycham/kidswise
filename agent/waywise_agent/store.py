@@ -114,6 +114,24 @@ CREATE TABLE IF NOT EXISTS child_question (
     region TEXT NOT NULL,
     created_at REAL NOT NULL
 );
+CREATE TABLE IF NOT EXISTS advisor_message (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    family_id TEXT NOT NULL REFERENCES family(id),
+    child_id TEXT,
+    role TEXT NOT NULL,
+    text TEXT NOT NULL,
+    region TEXT NOT NULL,
+    created_at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_advisor_family ON advisor_message(family_id, child_id, id);
+CREATE TABLE IF NOT EXISTS weekly_report (
+    child_id TEXT NOT NULL REFERENCES child(id),
+    week_start TEXT NOT NULL,
+    data TEXT NOT NULL,
+    region TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    PRIMARY KEY (child_id, week_start)
+);
 CREATE INDEX IF NOT EXISTS idx_question_child ON child_question(child_id, id);
 CREATE INDEX IF NOT EXISTS idx_session_device ON session(device_id, last_at);
 CREATE INDEX IF NOT EXISTS idx_message_session ON message(session_id, id);
@@ -272,6 +290,46 @@ class Store:
             "SELECT text, created_at FROM child_question WHERE child_id = ? ORDER BY id DESC LIMIT ?", (child_id, limit)
         )
         return [dict(r) for r in rows]
+
+    def questions_between(self, child_id: str, start: float, end: float) -> list[dict]:
+        rows = self._q(
+            "SELECT text, created_at FROM child_question WHERE child_id = ? AND created_at >= ? AND created_at < ? ORDER BY id",
+            (child_id, start, end),
+        )
+        return [dict(r) for r in rows]
+
+    def last_activity(self, child_id: str) -> float:
+        rows = self._q("SELECT MAX(last_at) t FROM session WHERE child_id = ?", (child_id,))
+        return rows[0]["t"] or 0.0
+
+    # ---- 顾问对话 & 周报缓存（家长教育 Agent 第二步）----
+
+    def add_advisor_message(self, family_id: str, child_id: str | None, role: str, text: str) -> None:
+        self._q(
+            "INSERT INTO advisor_message (family_id, child_id, role, text, region, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (family_id, child_id, role, text, self.region, time.time()),
+        )
+
+    def advisor_history(self, family_id: str, child_id: str | None, limit: int = 40) -> list[dict]:
+        rows = self._q(
+            "SELECT role, text, created_at FROM advisor_message WHERE family_id = ? AND child_id IS ? ORDER BY id DESC LIMIT ?",
+            (family_id, child_id, limit),
+        )
+        return [dict(r) for r in reversed(rows)]
+
+    def clear_advisor_history(self, family_id: str, child_id: str | None) -> None:
+        self._q("DELETE FROM advisor_message WHERE family_id = ? AND child_id IS ?", (family_id, child_id))
+
+    def weekly_report(self, child_id: str, week_start: str) -> tuple[dict, float] | None:
+        rows = self._q("SELECT data, created_at FROM weekly_report WHERE child_id = ? AND week_start = ?", (child_id, week_start))
+        return (json.loads(rows[0]["data"]), rows[0]["created_at"]) if rows else None
+
+    def save_weekly_report(self, child_id: str, week_start: str, data: dict) -> None:
+        self._q(
+            "INSERT INTO weekly_report VALUES (?, ?, ?, ?, ?) "
+            "ON CONFLICT(child_id, week_start) DO UPDATE SET data = excluded.data, created_at = excluded.created_at",
+            (child_id, week_start, json.dumps(data, ensure_ascii=False), self.region, time.time()),
+        )
 
     def custom_theme(self, theme_id: str) -> dict | None:
         rows = self._q("SELECT data FROM custom_theme WHERE id = ?", (theme_id,))

@@ -4,6 +4,15 @@
   <view wx:elif="{{!child}}" class="empty">还没有绑定设备</view>
 
   <block wx:else>
+    <view class="card weekly-entry" bindtap="openWeekly">
+      <view class="row between">
+        <view>
+          <view class="weekly-title">本周好奇心周报</view>
+          <view class="muted small">这周他在想什么、问了什么、下周可以怎么玩</view>
+        </view>
+        <view class="accent">›</view>
+      </view>
+    </view>
     <view class="card row totals">
       <view class="total">
         <view class="total-num said-num">{{counts.said}}</view>

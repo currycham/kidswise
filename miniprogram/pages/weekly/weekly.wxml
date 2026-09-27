@@ -1,0 +1,46 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="empty">顾问正在读这一周的聊天，大约十几秒…</view>
+  <view wx:elif="{{error}}" class="error" bindtap="load">{{error}}，点击重试</view>
+  <block wx:else>
+    <view class="muted small week">{{r.week_start}} 这一周</view>
+    <view class="card row stats">
+      <view class="stat"><view class="num">{{r.stats.sessions}}</view><view class="muted small">次聊天</view></view>
+      <view class="stat"><view class="num">{{r.stats.minutes}}</view><view class="muted small">分钟</view></view>
+      <view class="stat"><view class="num">{{r.stats.child_turns}}</view><view class="muted small">句话</view></view>
+      <view class="stat"><view class="num">{{r.stats.questions}}</view><view class="muted small">个问题</view></view>
+    </view>
+    <view class="card summary">{{r.summary}}</view>
+
+    <block wx:if="{{!r.empty}}">
+      <view class="card" wx:if="{{r.topics.length}}">
+        <view class="card-title">他在问什么</view>
+        <view class="topic" wx:for="{{r.topics}}" wx:key="topic">
+          <text class="topic-name">{{item.topic}}</text>
+          <view class="muted small" wx:for="{{item.questions}}" wx:for-item="q" wx:key="*this">「{{q}}」</view>
+        </view>
+      </view>
+
+      <view class="card" wx:if="{{r.highlights.length}}">
+        <view class="card-title">值得记下来的原话</view>
+        <view class="hl" wx:for="{{r.highlights}}" wx:key="quote">
+          <view class="quote">“{{item.quote}}”</view>
+          <view class="muted small">{{item.why}}</view>
+        </view>
+      </view>
+
+      <view class="card" wx:if="{{r.notice.length}}">
+        <view class="card-title">可以留意的</view>
+        <view class="small" wx:for="{{r.notice}}" wx:key="*this">· {{item}}</view>
+      </view>
+
+      <view class="card" wx:if="{{r.next.length}}">
+        <view class="card-title">下周可以怎么接着玩</view>
+        <view class="next" wx:for="{{r.next}}" wx:key="idea">
+          <view>{{item.idea}}</view>
+          <view class="link small" data-idea="{{item.idea}}" bindtap="askAdvisor">问问顾问具体怎么做 ›</view>
+        </view>
+      </view>
+    </block>
+    <view class="muted small foot">周报只描述孩子在想什么，不打分、不和别的孩子比较。</view>
+  </block>
+</view>

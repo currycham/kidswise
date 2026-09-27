@@ -10,3 +10,5 @@
 .stat-num { font-size: 52rpx; font-weight: 700; color: var(--accent); }
 .links { padding: 8rpx 8rpx 0; }
 .link { color: var(--accent); }
+.advisor-entry { border: 2rpx solid var(--accent); }
+.advisor-title { font-size: 32rpx; font-weight: 600; margin-bottom: 6rpx; }

@@ -1,0 +1,16 @@
+<view class="wrap">
+  <scroll-view scroll-y class="log" scroll-into-view="{{scrollTo}}">
+    <view class="intro muted small">顾问认识你的孩子，会结合他最近真实的聊天给你几个选项和理由，决定权在你。它不做医学或心理诊断。</view>
+    <view wx:if="{{!messages.length}}" class="chips">
+      <view class="chip-q" wx:for="{{chips}}" wx:key="*this" data-text="{{item}}" bindtap="tapChip">{{item}}</view>
+    </view>
+    <view wx:for="{{messages}}" wx:key="id" id="{{item.id}}" class="msg {{item.role}} {{item.thinking ? 'thinking' : ''}}">
+      <text user-select>{{item.text}}</text>
+      <view wx:if="{{item.plan_idea}}" class="plan" data-idea="{{item.plan_idea}}" bindtap="copyIdea">做成探索计划：{{item.plan_idea}} ›</view>
+    </view>
+  </scroll-view>
+  <view class="bar">
+    <textarea class="input" value="{{input}}" auto-height maxlength="800" placeholder="有想法但不确定对不对？问问顾问" bindinput="onInput" />
+    <view class="btn send {{busy ? 'off' : ''}}" bindtap="send">问</view>
+  </view>
+</view>

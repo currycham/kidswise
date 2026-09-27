@@ -365,3 +365,7 @@ app.include_router(parent_router)
 from .studio_api import router as studio_router  # noqa: E402
 
 app.include_router(studio_router)
+
+from .advisor_api import router as advisor_router  # noqa: E402
+
+app.include_router(advisor_router)

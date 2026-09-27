@@ -4,6 +4,10 @@ const { STATUS_LABEL } = require('../../utils/format')
 Page({
   data: { child: null, counts: { heard: 0, said: 0 }, said: [], heard: [], older: 0, loading: true, error: '', STATUS_LABEL },
 
+  openWeekly() {
+    wx.navigateTo({ url: '/pages/weekly/weekly' })
+  },
+
   onShow() {
     this.load()
   },

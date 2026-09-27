@@ -3,3 +3,6 @@
 .said-num { color: var(--said); }
 .heard-num { color: var(--heard); }
 .legend { text-align: center; }
+.weekly-entry { border: 2rpx solid var(--accent); }
+.weekly-title { font-size: 32rpx; font-weight: 600; margin-bottom: 6rpx; }
+.accent { color: var(--accent); font-size: 40rpx; }

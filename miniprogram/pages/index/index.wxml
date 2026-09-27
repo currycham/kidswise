@@ -47,6 +47,16 @@
       <view wx:else class="muted">今天还没有和 Mumi 聊天</view>
     </view>
 
+    <view class="card advisor-entry" bindtap="goAdvisor">
+      <view class="row between">
+        <view>
+          <view class="advisor-title">问问顾问</view>
+          <view class="muted small">有想法但不确定对不对？它认识{{child.name}}</view>
+        </view>
+        <view class="link">›</view>
+      </view>
+    </view>
+
     <view class="row between links">
       <text class="link" bindtap="goHistory">查看完整对话 ›</text>
       <text class="link muted" bindtap="goBind">孩子信息</text>

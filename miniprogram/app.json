@@ -4,7 +4,9 @@
     "pages/history/history",
     "pages/growth/growth",
     "pages/themes/themes",
-    "pages/child/child"
+    "pages/child/child",
+    "pages/weekly/weekly",
+    "pages/advisor/advisor"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFF8EF",
@@ -18,10 +20,22 @@
     "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
-      { "pagePath": "pages/index/index", "text": "今天" },
-      { "pagePath": "pages/history/history", "text": "对话记录" },
-      { "pagePath": "pages/growth/growth", "text": "成长" },
-      { "pagePath": "pages/themes/themes", "text": "我的主题" }
+      {
+        "pagePath": "pages/index/index",
+        "text": "今天"
+      },
+      {
+        "pagePath": "pages/history/history",
+        "text": "对话记录"
+      },
+      {
+        "pagePath": "pages/growth/growth",
+        "text": "成长"
+      },
+      {
+        "pagePath": "pages/themes/themes",
+        "text": "我的主题"
+      }
     ]
   },
   "style": "v2",

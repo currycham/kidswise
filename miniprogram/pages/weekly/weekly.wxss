@@ -1,0 +1,11 @@
+.week { padding: 0 8rpx 16rpx; }
+.stats { justify-content: space-around; text-align: center; }
+.num { font-size: 44rpx; font-weight: 700; color: var(--accent); }
+.summary { font-size: 32rpx; line-height: 1.7; }
+.topic { margin-bottom: 20rpx; }
+.topic-name { font-weight: 600; }
+.hl { margin-bottom: 20rpx; }
+.quote { font-size: 34rpx; font-weight: 600; margin-bottom: 6rpx; }
+.next { margin-bottom: 20rpx; }
+.link { color: var(--accent); margin-top: 8rpx; }
+.foot { text-align: center; padding: 16rpx 0 32rpx; }

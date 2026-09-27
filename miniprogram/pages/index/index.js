@@ -35,6 +35,10 @@ Page({
     wx.navigateTo({ url: '/pages/child/child' })
   },
 
+  goAdvisor() {
+    wx.navigateTo({ url: '/pages/advisor/advisor' })
+  },
+
   goHistory() {
     wx.switchTab({ url: '/pages/history/history' })
   },
