@@ -61,3 +61,17 @@ def test_strips_asr_emotion_emoji():
 
     req = ChatRequest(messages=[{"role": "user", "content": "我画了一只小狗。😊"}])
     assert history_of(req) == [{"role": "user", "content": "我画了一只小狗。"}]
+
+
+@pytest.mark.parametrize("text", ["你好，小志。", "你好小智", "小智", "Hello 小智!"])
+def test_wake_word_becomes_hello(text):
+    from waywise_agent.app import ChatRequest, history_of
+
+    assert history_of(ChatRequest(messages=[{"role": "user", "content": text}]))[0]["content"] == "你好"
+
+
+def test_normal_text_mentioning_xiaozhi_is_kept():
+    from waywise_agent.app import ChatRequest, history_of
+
+    text = "小智你今天去哪了"
+    assert history_of(ChatRequest(messages=[{"role": "user", "content": text}]))[0]["content"] == text

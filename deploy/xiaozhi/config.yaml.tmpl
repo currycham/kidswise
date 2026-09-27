@@ -12,6 +12,10 @@ prompt: |
 prompt_template: data/waywise-prompt.txt
 system_error_response: "Mumi 有点累了，我们等一下再聊好吗？"
 
+# 唤醒词回复：xiaozhi 默认从一组预录话术里随机播（「请您说出指令吧」之类），不是 Mumi 的口吻。
+# 关掉后唤醒词会作为孩子说的第一句交给 agent，由 Mumi 自己打招呼（还能顺带提起上次聊的事）。
+enable_wakeup_words_response_cache: false
+
 # 结束语会被当成一条 user 消息发给 agent，先关掉
 end_prompt:
   enable: false

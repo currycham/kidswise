@@ -92,11 +92,19 @@ def _user_text(content: str | list | None) -> str:
     return _ASR_EMOJI.sub("", text).strip()
 
 
+# 固件唤醒词（写在板子里，暂时改不了）。孩子喊它就是在打招呼，别让 Mumi 纠结自己叫不叫「小智」
+_WAKE_WORDS = re.compile(r"^(你好|嗨|hi|hello)?[，,\s]*(小智|小志|小知|小治|小致)[。！!？?.\s]*$", re.IGNORECASE)
+
+
+def _normalize_child(text: str) -> str:
+    return "你好" if _WAKE_WORDS.match(text.strip()) else text
+
+
 def history_of(req: ChatRequest) -> list[dict]:
     # 设备接入层（xiaozhi）自带的 system prompt 是它自己的人设和工具规则，一律丢弃，只用 Mumi 的。
     # TODO(第 8 天): 视觉描述接进来时，给它一个明确标记再单独放行。
     return [
-        {"role": m.role, "content": _user_text(m.content) if m.role == "user" else _text(m.content)}
+        {"role": m.role, "content": _normalize_child(_user_text(m.content)) if m.role == "user" else _text(m.content)}
         for m in req.messages
         if m.role in ("user", "assistant")
     ]
