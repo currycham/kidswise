@@ -42,7 +42,7 @@ PRINT_CSS = """
   /* 每一章新起一页；「一页纸」留在第一页；标了 join 的章节接在上一章后面 */
   h2{font-size:21px; margin:0 0 12px; padding-top:0; border-top:0; break-before:page; page-break-before:always}
   main > h2:first-of-type{break-before:auto; page-break-before:auto; margin-top:18px}
-  h2.join{break-before:auto; page-break-before:auto; margin-top:40px}
+  h2.join{break-before:auto; page-break-before:auto; margin-top:84px}  /* 同一页的两章之间多空两行 */
   h2,h3{break-after:avoid; page-break-after:avoid}
   h3{font-size:15.5px; margin:16px 0 7px}
   p,ul,ol{max-width:none}
@@ -62,8 +62,8 @@ PRINT_CSS = """
 }
 """
 
-# 这些章节比较短，打印时接在上一章后面（不另起一页）：二+三、六+七、八+九
-JOIN_WITH_PREVIOUS = ("三、", "七、", "九、")
+# 这些章节接在上一章后面（不另起一页）：二+三、六+七、八+九、十一+十二
+JOIN_WITH_PREVIOUS = ("三、", "七、", "九、", "十二、")
 
 
 def render_html(md_path: Path, title: str, standfirst: str, date: str) -> str:
