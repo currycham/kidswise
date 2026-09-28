@@ -1,0 +1,47 @@
+# 部署到腾讯云服务器：先跑测试，通过后让服务器拉取「刚测过的那个 commit」并部署。
+# 触发：GitHub 网页 Actions → deploy → Run workflow，或本机 deploy/deploy.sh，或推送 v* 标签。
+# 不在每次 push 时自动部署：重启 xiaozhi 会打断孩子正在进行的对话。
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 要部署的分支、标签或 commit
+        default: main
+        required: true
+  push:
+    tags: ["v*"]
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+    with:
+      ref: ${{ inputs.ref || github.ref }}
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - name: 确定要部署的 commit
+        id: sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: 让服务器拉取并部署
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          # 这把密钥在服务器上只能执行部署入口；传过去的内容只被当作版本号
+          ssh -i ~/.ssh/deploy -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "ubuntu@${DEPLOY_HOST}" "${{ steps.sha.outputs.sha }}"
