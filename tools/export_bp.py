@@ -62,8 +62,8 @@ PRINT_CSS = """
 }
 """
 
-# 这些章节接在上一章后面（不另起一页）：二+三、六+七、八+九、十一+十二
-JOIN_WITH_PREVIOUS = ("三、", "七、", "九、", "十二、")
+# 这些章节接在上一章后面（不另起一页）：二+三、五+六、八+九、十一+十二
+JOIN_WITH_PREVIOUS = ("三、", "六、", "九、", "十二、")
 
 
 def render_html(md_path: Path, title: str, standfirst: str, date: str) -> str:
