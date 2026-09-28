@@ -22,44 +22,48 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 # 只在打印（导出 PDF）时生效，不影响网页版
 PRINT_CSS = """
-@page{size:A4; margin:13mm 14mm 14mm 14mm}
+@page{size:A4; margin:19mm 19mm 19mm 19mm}
 @media print{
   html,body{-webkit-print-color-adjust:exact; print-color-adjust:exact}
   html,body,.shell,main,.masthead{background:#fff !important}
-  body{font-size:13.2px; line-height:1.62}
+  body{font-size:13.4px; line-height:1.66}
   main{padding:0}
 
-  /* 第一页：标题紧凑，不要日期、粗横线和分隔线 */
-  .masthead{margin:0 0 8px; padding:0; border-bottom:0}
-  .masthead .eyebrow{margin:0 0 4px}
-  .masthead h1{font-size:30px; margin:0 0 4px}
-  .masthead .standfirst{font-size:13.5px; line-height:1.55}
+  /* 第一页：标题和开头几句是重点，字号大一些；不要日期、粗横线和分隔线 */
+  .masthead{margin:0; padding:0; border-bottom:0}
+  .masthead .eyebrow{margin:0 0 6px}
+  .masthead h1{font-size:38px; margin:0 0 8px}
+  .masthead .standfirst{font-size:16px; line-height:1.6; color:var(--ink)}
   .masthead .meta{display:none}
+  .masthead + p{margin-top:16px; font-size:17px}
+  .masthead + p + p{font-size:15px}
   hr{display:none}
 
-  /* 每一章新起一页；「一页纸」留在第一页 */
+  /* 每一章新起一页；「一页纸」留在第一页；标了 join 的章节接在上一章后面 */
   h2{font-size:21px; margin:0 0 12px; padding-top:0; border-top:0; break-before:page; page-break-before:always}
-  main > h2:first-of-type{break-before:auto; page-break-before:auto; margin-top:22px}
-  /* 第一页有余量：标题和「一页纸」表格松一点，铺满一页 */
-  .masthead h1{font-size:36px; margin:2px 0 8px}
-  .masthead .standfirst{font-size:14.5px}
-  .masthead + p{margin-top:18px}
-  main > h2:first-of-type + .tablewrap table{font-size:13.2px; line-height:1.62}
-  main > h2:first-of-type + .tablewrap td{padding:10px 12px}
+  main > h2:first-of-type{break-before:auto; page-break-before:auto; margin-top:18px}
+  h2.join{break-before:auto; page-break-before:auto; margin-top:40px}
   h2,h3{break-after:avoid; page-break-after:avoid}
   h3{font-size:15.5px; margin:16px 0 7px}
-  p{margin:0 0 8px; max-width:none}
+  p,ul,ol{max-width:none}
+  p{margin:0 0 8px}
+  li{margin:0 0 5px}
 
   .tablewrap{overflow:visible; margin:0 0 12px}
   table{font-size:12.2px; line-height:1.5}
   th,td{padding:5px 9px}
   th{font-size:11.5px}
+  main > h2:first-of-type + .tablewrap table{font-size:12.6px; line-height:1.55}
+  main > h2:first-of-type + .tablewrap td{padding:7px 10px}
   tr,pre,blockquote{break-inside:avoid; page-break-inside:avoid}
   blockquote{margin:0 0 12px; padding:9px 14px; font-size:13px}
   pre{margin:0 0 12px; padding:10px 14px; font-size:12px; line-height:1.55;
       background:#F0F0EC; color:#222; box-shadow:none; border:1px solid #DDD}
 }
 """
+
+# 这些章节比较短，打印时接在上一章后面（不另起一页）：二+三、六+七、八+九
+JOIN_WITH_PREVIOUS = ("三、", "七、", "九、")
 
 
 def render_html(md_path: Path, title: str, standfirst: str, date: str) -> str:
@@ -77,6 +81,8 @@ def render_html(md_path: Path, title: str, standfirst: str, date: str) -> str:
     html = md.convert(body_md)
     html = re.sub(r"<thead>\s*<tr>\s*(?:<th></th>\s*)+</tr>\s*</thead>\s*", "", html)  # 没有列名的表格不要空表头
     html = html.replace("<table>", '<div class="tablewrap"><table>').replace("</table>", "</table></div>")
+    for prefix in JOIN_WITH_PREVIOUS:
+        html = re.sub(rf'<h2 id="([^"]*)">{prefix}', rf'<h2 id="\1" class="join">{prefix}', html)
     toc = "".join(f'<a href="#{t["id"]}" class="lv2">{t["name"]}</a>' for t in md.toc_tokens)
     return f"""{head}<body>
 <div class="shell">
