@@ -1,7 +1,7 @@
 """把 BP 的 Markdown 导出成网页版 HTML 和打印版 PDF。
 
-    python tools/export_bp.py BP_Waywise_2026-09-27.md            # → 同名 .html 和 .pdf
-    python tools/export_bp.py BP_Waywise_2026-09-27.md --pdf BP_Waywise_2026-09-28.pdf
+    python tools/export_bp.py BP_Waywise_2026-09-28.md                    # → 同名 .html 和 .pdf
+    python tools/export_bp.py BP_Waywise_2026-09-28.md --join "五、,十、"   # 这些章节接在上一章后面
 
 样式沿用 BP_Mumi_2026-09-22.html 的网页样式；打印时另加一层更紧凑的样式：
 第一页只放标题和「一页纸」，之后每一章新起一页。PDF 用本机 Chrome 无头打印。
@@ -55,18 +55,20 @@ PRINT_CSS = """
   th{font-size:11.5px}
   main > h2:first-of-type + .tablewrap table{font-size:12.6px; line-height:1.55}
   main > h2:first-of-type + .tablewrap td{padding:7px 10px}
-  tr,pre,blockquote{break-inside:avoid; page-break-inside:avoid}
+  /* 表格、列表、代码块、引用都比一页短：整块挪到下一页，不从中间断开 */
+  tr,pre,blockquote,ul,ol,.tablewrap{break-inside:avoid; page-break-inside:avoid}
+  /* 引出列表 / 表格 / 代码块的那句话，跟着它们走，不单独留在上一页底部 */
+  p:has(+ ul), p:has(+ ol), p:has(+ .tablewrap), p:has(+ pre){break-after:avoid; page-break-after:avoid}
   blockquote{margin:0 0 12px; padding:9px 14px; font-size:13px}
   pre{margin:0 0 12px; padding:10px 14px; font-size:12px; line-height:1.55;
       background:#F0F0EC; color:#222; box-shadow:none; border:1px solid #DDD}
 }
 """
 
-# 这些章节接在上一章后面（不另起一页）：二+三、五+六、八+九、十一+十二
-JOIN_WITH_PREVIOUS = ("三、", "六、", "九、", "十二、")
+# 默认每章新起一页；--join 指定哪些章节接在上一章后面（按章节标题开头匹配，如 "五、,十、"）
 
 
-def render_html(md_path: Path, title: str, standfirst: str, date: str) -> str:
+def render_html(md_path: Path, title: str, standfirst: str, date: str, join: tuple[str, ...] = ()) -> str:
     old = STYLE_SOURCE.read_text(encoding="utf-8")
     head = old[: old.index("<body")]
     head = re.sub(r"<title>.*?</title>", f"<title>{title}</title>", head)
@@ -81,8 +83,8 @@ def render_html(md_path: Path, title: str, standfirst: str, date: str) -> str:
     html = md.convert(body_md)
     html = re.sub(r"<thead>\s*<tr>\s*(?:<th></th>\s*)+</tr>\s*</thead>\s*", "", html)  # 没有列名的表格不要空表头
     html = html.replace("<table>", '<div class="tablewrap"><table>').replace("</table>", "</table></div>")
-    for prefix in JOIN_WITH_PREVIOUS:
-        html = re.sub(rf'<h2 id="([^"]*)">{prefix}', rf'<h2 id="\1" class="join">{prefix}', html)
+    for prefix in join:
+        html = re.sub(rf'<h2 id="([^"]*)">{re.escape(prefix)}', rf'<h2 id="\1" class="join">{prefix}', html)
     toc = "".join(f'<a href="#{t["id"]}" class="lv2">{t["name"]}</a>' for t in md.toc_tokens)
     return f"""{head}<body>
 <div class="shell">
@@ -107,6 +109,7 @@ def main() -> None:
     ap.add_argument("md", type=Path)
     ap.add_argument("--pdf", type=Path)
     ap.add_argument("--date", default="")
+    ap.add_argument("--join", default="", help='接在上一章后面的章节，逗号分隔，如 "五、,十、"')
     ap.add_argument("--standfirst", default="AI 时代，背下来的东西都不再稀缺。稀缺的是一个会提问的孩子，和一个知道自己在做什么的家长。")
     args = ap.parse_args()
 
@@ -114,7 +117,8 @@ def main() -> None:
     html_path = md_path.with_suffix(".html")
     pdf_path = (args.pdf or md_path.with_suffix(".pdf")).resolve()
     date = args.date or re.search(r"\d{4}-\d{2}-\d{2}", pdf_path.name or md_path.name).group(0)
-    html_path.write_text(render_html(md_path, "Waywise 商业计划书", args.standfirst, date), encoding="utf-8")
+    join = tuple(j.strip() for j in args.join.split(",") if j.strip())
+    html_path.write_text(render_html(md_path, "Waywise 商业计划书", args.standfirst, date, join), encoding="utf-8")
     subprocess.run(
         [CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer", "--virtual-time-budget=15000",
          f"--print-to-pdf={pdf_path}", html_path.as_uri()],
