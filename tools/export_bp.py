@@ -20,6 +20,13 @@ ROOT = Path(__file__).resolve().parent.parent
 STYLE_SOURCE = ROOT / "BP_Mumi_2026-09-22.html"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
+# 小标题（###）：沿用文档自己的配色 —— 深绿字（同章节标题）+ 左侧一条橙红细线（同眉标、引用块的点缀色），
+# 让一章里的几个部分一眼能分开。网页版和 PDF 都生效
+H3_CSS = """
+h3{color:var(--forest); font-size:20px; font-weight:700; padding-left:11px;
+   border-left:3px solid var(--signal); line-height:1.35; margin:40px 0 14px}
+"""
+
 # 只在打印（导出 PDF）时生效，不影响网页版
 PRINT_CSS = """
 @page{size:A4; margin:19mm 19mm 19mm 19mm}
@@ -44,7 +51,8 @@ PRINT_CSS = """
   main > h2:first-of-type{break-before:auto; page-break-before:auto; margin-top:18px}
   h2.join{break-before:auto; page-break-before:auto; margin-top:84px}  /* 同一页的两章之间多空两行 */
   h2,h3{break-after:avoid; page-break-after:avoid}
-  h3{font-size:15.5px; margin:16px 0 7px}
+  h3{font-size:17px; margin:22px 0 9px; padding-left:9px}
+  h2 + h3{margin-top:4px}
   p,ul,ol{max-width:none}
   p{margin:0 0 8px}
   li{margin:0 0 5px}
@@ -72,7 +80,7 @@ def render_html(md_path: Path, title: str, standfirst: str, date: str, join: tup
     old = STYLE_SOURCE.read_text(encoding="utf-8")
     head = old[: old.index("<body")]
     head = re.sub(r"<title>.*?</title>", f"<title>{title}</title>", head)
-    head = head.replace("</style>", PRINT_CSS + "</style>", 1)
+    head = head.replace("</style>", H3_CSS + PRINT_CSS + "</style>", 1)
 
     lines = md_path.read_text(encoding="utf-8").split("\n")
     body_md = "\n".join(lines[1:])  # 第一行 # 标题放进 masthead
