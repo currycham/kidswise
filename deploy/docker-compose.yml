@@ -31,6 +31,8 @@ services:
       - seccomp:unconfined
     environment:
       - TZ=Asia/Shanghai
+      # 照片需要顺时针转的角度：裸板正放 0；装进木米外壳后主板转了 90°，按第一张实拍照片定 90 或 270
+      - WAYWISE_CAMERA_ROTATE=0
     ports:
       - "8000:8000"   # 板子的 WebSocket
       - "8003:8003"   # OTA + Web 测试页 + 视觉接口

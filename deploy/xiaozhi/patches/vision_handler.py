@@ -44,6 +44,33 @@ def _white_balance(image_data: bytes, logger) -> bytes:
         logger.bind(tag=TAG).warning(f"白平衡跳过: {e}")
         return image_data
 
+def _rotate_upright(image_data: bytes, logger) -> bytes:
+    """Waywise 补丁：把照片转正，只在内存里做，不落盘。
+
+    木米外壳里主板转了 90° 放（镜头才能对上左眼），拍出来的照片也跟着歪。
+    WAYWISE_CAMERA_ROTATE 填照片需要顺时针转的角度（0/90/180/270），默认 0：裸板正放时不用转。
+    """
+    import os
+    try:
+        angle = int(os.environ.get("WAYWISE_CAMERA_ROTATE", "0")) % 360
+    except ValueError:
+        angle = 0
+    if angle not in (90, 180, 270):
+        return image_data
+    try:
+        import io
+        from PIL import Image
+
+        img = Image.open(io.BytesIO(image_data)).convert("RGB")
+        # PIL 的 ROTATE_* 是逆时针
+        img = img.transpose({90: Image.ROTATE_270, 180: Image.ROTATE_180, 270: Image.ROTATE_90}[angle])
+        out = io.BytesIO()
+        img.save(out, format="JPEG", quality=90)
+        return out.getvalue()
+    except Exception as e:  # 转不了就用原图，不能影响拍照
+        logger.bind(tag=TAG).warning(f"照片转正跳过: {e}")
+        return image_data
+
 class VisionHandler(BaseHandler):
     def __init__(self, config: dict):
         super().__init__(config)
@@ -125,6 +152,7 @@ class VisionHandler(BaseHandler):
                 )
 
             # 将图片转换为base64编码
+            image_data = _rotate_upright(image_data, self.logger)  # Waywise 补丁：外壳里主板转了 90°
             image_data = _white_balance(image_data, self.logger)  # Waywise 补丁：去掉偏紫
             image_base64 = base64.b64encode(image_data).decode("utf-8")
 
