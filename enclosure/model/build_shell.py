@@ -102,7 +102,7 @@ def build():
         rib_dir=np.array([x,z])/np.hypot(x,z)
         rib=box(-0.8,0.8,Y_SPLIT-6.5,Y_SPLIT,0,12)
         ang=np.arctan2(rib_dir[0],rib_dir[1])
-        rib.apply_transform(trimesh.transformations.rotation_matrix(-ang,[0,1,0])); rib.apply_translation([x,0,z])
+        rib.apply_transform(trimesh.transformations.rotation_matrix(ang,[0,1,0])); rib.apply_translation([x,0,z])   # rib runs outwards into the wall
         front=D(U(front,U(cyl_y(x,z,2.75,Y_SPLIT-6.5,Y_SPLIT),I(rib,outer))),cyl_y(x,z,0.85,Y_SPLIT-6.0,Y_SPLIT+1))
         rho=np.hypot(x,z)/S; yb=float(shell(rho,BA,YB,BR,BN,BM))*S
         tubeb=I(cyl_y(x,z,2.75,Y_SPLIT,60),outer)
@@ -120,7 +120,7 @@ def build():
     for x in (-9.0,9.0):
         yo=float(shell(np.hypot(x,8.0)/S,BA,YB,BR,BN,BM))*S
         back=U(back,I(cyl_y(x,8.0,6.6,yo-4.8,60),outer))
-        back=D(back,cyl_y(x,8.0,5.15,yo-0.8-3.2,yo-0.8))
+        back=D(back,cyl_y(x,8.0,5.15,yo-8.0,yo-0.8))   # open to the inside so the magnet can go in
 
     # --- charger (TP4056, USB-C down): side rails on the back wall, port slot in the bottom
     cx0,cx1,cy0,cy1,cz0,cz1=PARTS['charger']
@@ -162,6 +162,10 @@ if __name__=='__main__':
     for name,m in (('mumi_front_shell',front),('mumi_back_shell',back)):
         m=m.copy(); m.apply_translation([0,0,-GROUND])
         path=os.path.join(OUT,name+'.stl'); export_stl(m,path)
-        r=trimesh.load(path); print(name,'reloaded watertight:',r.is_watertight,'faces',len(r.faces))
+        r=trimesh.load(path); bodies=r.split(only_watertight=False)
+        print(name,'reloaded watertight:',r.is_watertight,'bodies:',len(bodies),'faces',len(r.faces))
+        # print shops need one connected solid: no loose pieces, no sealed voids
+        if len(bodies)!=1 or r.volume<=0:
+            raise RuntimeError(f'{name}: {len(bodies)} bodies '+str([(round(b.volume,1),b.bounds.round(1).tolist()) for b in bodies]))
     json.dump({'S':S,'WALL':WALL,'Y_SPLIT':Y_SPLIT,'Y_PCB':Y_PCB,'board_centre':[BX,BZ],'mic':MIC,'holes':HOLES,'screws':SCREWS,'parts':PARTS,'ground':GROUND},
               open(os.path.join(OUT,'layout.json'),'w'),indent=1)
