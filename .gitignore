@@ -1,2 +1,13 @@
 .claude/settings.local.json
 .DS_Store
+# 3D meshes are large; regenerate with enclosure/model/*.py
+*.stl
+*.zip
+__pycache__/
+# design drafts, third-party references and phone photos stay local;
+# keep only the approved Mumi v2 images the enclosure scripts use
+hardware_figs/
+ip/*
+!ip/mumi_v2_4_jimeng.png
+!ip/mumi_v2_4_jimeng_sanshi.png
+!ip/mumi_v2_4_clean_preview.png
