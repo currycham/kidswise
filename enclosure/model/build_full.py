@@ -56,7 +56,8 @@ def smile(S=S):
     return trimesh.boolean.union(caps,engine='manifold')
 
 def appearance(S=S):
-    solid=trimesh.boolean.union([body_mesh(S)]+feet(S)+eyes(S)+cheeks(S),engine='manifold')
+    # cheeks are painted, not raised: a raised pad leaves a crease the print shop reads as a thin wall
+    solid=trimesh.boolean.union([body_mesh(S)]+feet(S)+eyes(S),engine='manifold')
     return trimesh.boolean.difference([solid,smile(S)],engine='manifold')
 
 if __name__=='__main__':
