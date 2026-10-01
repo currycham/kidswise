@@ -123,3 +123,9 @@ def test_exploration_plan_without_words_can_be_saved_and_published(env):
     assert "家长为孩子定的探索：为什么天会黑" in chat.calls[-1][0]["content"]
     # 既没有词也没有要点 / 动作 → 不接受
     assert client.post("/api/studio/themes", headers=h, json={"name": "空", "words": []}).status_code == 422
+
+
+def test_prompt_has_no_ready_made_praise_to_copy():
+    # 实测：规则里写的例句「太阳下班了，这个想法好有意思」被模型原样搬进了对蜗牛的回答里
+    system = build_system_prompt(ChildProfile(name="豆豆", age=5), None)
+    assert "太阳下班了" not in system and "复述他的想法" in system
