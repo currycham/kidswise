@@ -11,3 +11,6 @@ ip/*
 !ip/mumi_v2_4_jimeng.png
 !ip/mumi_v2_4_jimeng_sanshi.png
 !ip/mumi_v2_4_clean_preview.png
+# BP figures: keep only the processed fig_* images the BP uses
+bp_assets/*
+!bp_assets/fig_*.jpg

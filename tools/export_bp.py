@@ -25,6 +25,13 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 H3_CSS = """
 h3{color:var(--forest); font-size:20px; font-weight:700; padding-left:11px;
    border-left:3px solid var(--signal); line-height:1.35; margin:40px 0 14px}
+/* 插图：<figure class="fig">（单张，可加 narrow）、<figure class="fig row">（几张并排）*/
+figure.fig{margin:22px 0 26px; break-inside:avoid; page-break-inside:avoid}
+figure.fig img{display:block; max-width:100%; height:auto; border-radius:10px; border:1px solid var(--rule)}
+figure.fig.narrow img{max-width:62%; margin:0 auto}
+figure.fig.row .imgs{display:flex; gap:12px; align-items:flex-start}
+figure.fig.row .imgs img{flex:1 1 0; min-width:0}
+figure.fig figcaption{font-size:13px; color:var(--ink-faint); text-align:center; margin-top:8px}
 """
 
 # 只在打印（导出 PDF）时生效，不影响网页版
@@ -44,6 +51,8 @@ PRINT_CSS = """
   .masthead .meta{display:none}
   .masthead + p{margin-top:16px; font-size:17px}
   .masthead + p + p{font-size:15px}
+  figure.fig{margin:12px 0 16px}
+  figure.fig figcaption{font-size:11px; margin-top:5px}
   hr{display:none}
 
   /* 每一章新起一页；「一页纸」留在第一页；标了 join 的章节接在上一章后面 */
