@@ -110,22 +110,22 @@ const isExploration = (t) => (t.ideas && t.ideas.length) || (t.moves && t.moves.
 
 async function renderHome() {
   show('home-view')
-  const [{ themes }, { templates }, profile, questions] = await Promise.all([
+  const [{ themes }, { templates }, profile, questions, shared] = await Promise.all([
     api('/studio/themes'),
     api('/studio/templates'),
     api('/studio/profile'),
     state.childId ? api(`/studio/questions?child_id=${state.childId}`) : Promise.resolve({ questions: [] }),
+    api(`/studio/shared${state.childId ? `?child_id=${state.childId}` : ''}`),
   ])
   const current = state.children.find((c) => c.id === state.childId)?.theme_id
   $('my-themes').innerHTML = ''
   for (const t of themes) $('my-themes').append(card(t, t.theme_id === current ? '正在进行' : '', () => openEditor(t, t.theme_id)))
   $('no-themes').hidden = themes.length > 0
 
-  $('templates-x').innerHTML = ''
+  // 探索计划模板现在都在「别的家长在做什么」里；这里只剩英语主题模板
   $('templates-lang').innerHTML = ''
-  for (const t of templates) {
-    ;(isExploration(t) ? $('templates-x') : $('templates-lang')).append(card(t, '', () => openEditor(t, null)))
-  }
+  for (const t of templates) if (!isExploration(t)) $('templates-lang').append(card(t, '', () => openEditor(t, null)))
+  renderShared(shared.plans)
 
   const bits = [profile.values && `看重${profile.values}`, profile.avoid && `不要${profile.avoid}`].filter(Boolean)
   $('profile-summary').textContent = bits.length
@@ -153,6 +153,96 @@ async function renderHome() {
     ul.append(li)
   }
 }
+
+// ---- 别的家长在做什么：按孩子最近的问题挑几个，借用并改成自己孩子的 ----
+const childName = () => state.children.find((c) => c.id === state.childId)?.name || '孩子'
+
+const sharedReasons = new Map()
+
+function renderShared(plans) {
+  sharedReasons.clear()
+  for (const p of plans) sharedReasons.set(p.id, p.reason)
+  const box = $('shared')
+  box.innerHTML = ''
+  for (const p of plans) {
+    const el = document.createElement('div')
+    el.className = 'card'
+    el.innerHTML = '<div class="title"></div><div class="domain"></div><div class="sub"></div><div class="reason"></div><div class="author"></div>'
+    el.querySelector('.title').textContent = p.name
+    el.querySelector('.domain').textContent = p.domain
+    el.querySelector('.sub').textContent = p.goal
+    el.querySelector('.reason').textContent = p.reason
+    el.querySelector('.reason').hidden = !p.reason
+    el.querySelector('.author').textContent = p.author
+    el.addEventListener('click', () => openShared(p.id).catch(showError))
+    box.append(el)
+  }
+  // 输入框下面：没想好的时候，给三个和孩子最相关的
+  const chips = $('ask-suggest-chips')
+  chips.innerHTML = ''
+  for (const p of plans.slice(0, 3)) {
+    const b = document.createElement('button')
+    b.type = 'button'
+    b.textContent = p.name
+    b.title = p.reason || p.goal
+    b.addEventListener('click', () => openShared(p.id).catch(showError))
+    chips.append(b)
+  }
+  $('ask-suggest').hidden = !plans.length || $('ask-input').value.trim() !== ''
+}
+
+$('ask-input').addEventListener('input', () => {
+  $('ask-suggest').hidden = $('ask-suggest-chips').children.length === 0 || $('ask-input').value.trim() !== ''
+})
+
+let openedShared = null
+
+async function openShared(id) {
+  const d = await api(`/studio/shared/${id}`)
+  openedShared = d
+  $('sd-domain').textContent = d.domain
+  $('sd-name').textContent = d.name
+  $('sd-author').textContent = d.author
+  $('sd-reason').textContent = sharedReasons.get(id) || ''
+  $('sd-why').textContent = d.why
+  $('sd-reaction').textContent = d.reaction
+  $('sd-reaction-block').hidden = !d.reaction
+  $('sd-goal').textContent = d.plan.goal
+  $('sd-moves').innerHTML = ''
+  for (const m of d.plan.moves) {
+    const li = document.createElement('li')
+    li.textContent = `${m.type}：${m.prompt}`
+    $('sd-moves').append(li)
+  }
+  $('sd-borrow').textContent = `借用，改成${childName()}的`
+  $('sd-borrow').disabled = false
+  $('sd-status').textContent = ''
+  $('sd-error').textContent = ''
+  $('shared-dialog').showModal()
+}
+
+$('sd-borrow').addEventListener('click', async () => {
+  if (!openedShared) return
+  $('sd-borrow').disabled = true
+  $('sd-error').textContent = ''
+  $('sd-status').textContent = `正在按${childName()}改写，大约十几秒…`
+  try {
+    const r = await api('/studio/borrow', { method: 'POST', body: { shared_id: openedShared.id, child_id: state.childId } })
+    $('shared-dialog').close()
+    openEditor(r.draft, null)
+    $('edit-ok').textContent = `这是按${childName()}改过的版本（原计划：${r.based_on}）。改一改、在右边预览，满意了再发布。`
+  } catch (err) {
+    $('sd-error').textContent = err.message
+  }
+  $('sd-borrow').disabled = false
+  $('sd-status').textContent = ''
+})
+
+$('sd-view').addEventListener('click', () => {
+  if (!openedShared) return
+  $('shared-dialog').close()
+  openEditor(openedShared.plan, null)
+})
 
 $('new-blank').addEventListener('click', () =>
   openEditor({ name: '', level: 1, domain: '自然', goal: '', ideas: [], moves: [], words: [], patterns: [], scene_hint: '', avoid: '' }, null)

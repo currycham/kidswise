@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 from waywise_agent.app import Runtime, app, get_llm, get_runtime
 from waywise_agent.config import Settings, get_settings
-from waywise_agent.memory import MemoryScheduler, parse_facts
+from waywise_agent.memory import MemoryScheduler, extract_facts, grounded, parse_facts
 from waywise_agent.store import HEARD, NEW, SAID, Store, word_status
 
 AUTH = {"Authorization": "Bearer test-key"}
@@ -122,3 +122,22 @@ def test_scheduler_extracts_after_idle(tmp_path):
 
     asyncio.run(run())
     assert store.recent_facts(child.id) == ["喜欢白色的小狗"]
+
+
+def test_grounded_keeps_what_the_child_said_and_drops_inventions():
+    child = "蜗牛为什么背着房子呀？ 下雨的时候小鸟躲在哪里？ 我家有一只小白狗叫雪球"
+    assert grounded("蜗牛背着房子", child)
+    assert grounded("有一只叫雪球的小白狗", child)
+    assert not grounded("今天去了公园", child)
+    assert not grounded("有个妹妹", child)
+    assert grounded("likes dinosaurs", "I like dinosaurs")
+
+
+def test_extraction_drops_copied_examples():
+    # 孩子只问了问题，模型却「记住」了孩子没说过的事（实测：照抄了提示词里的例子）
+    class Copycat:
+        async def stream(self, messages, **params):
+            yield '["蜗牛背着房子", "有一只叫雪球的小白狗", "今天去了公园"]'
+
+    msgs = [{"role": "user", "text": "蜗牛为什么背着房子呀？"}, {"role": "assistant", "text": "你觉得呢？"}]
+    assert asyncio.run(extract_facts(Copycat(), msgs)) == ["蜗牛背着房子"]

@@ -20,6 +20,7 @@ from .parent_api import current_family, get_parent_store
 from .persona import ChildProfile, FamilyValues, build_system_prompt
 from .safety import check_input, safe_stream
 from .store import ParentStore, StudioStore
+from .shared import load_shared, match
 from .themes import Idea, Move, Theme, Word, load_templates
 
 log = logging.getLogger(__name__)
@@ -205,7 +206,7 @@ DESIGNER_PROMPT = """你是 Waywise 的「探索计划设计师」。家长会�
 - 好奇心优先：重在让孩子愿意猜、愿意问、愿意动手，而不是记住答案；不出题、不考试、不做练习册式的内容
 - 贴合年龄：要点用孩子听得懂的说法（kid_words），超出年龄的概念写进 avoid
 - 探索动作要具体、能在家里或路上随手做：猜一猜、找一找、数一数、动手试、连一连、讲给我听、比一比
-- 贴合这个孩子：用上他感兴趣的东西和他最近问过的问题
+- 贴合这个孩子：用上他感兴趣的东西和他最近问过的问题；只用上面给出的孩子信息，不要编造他没有的宠物、家人、经历
 - 照着这个家庭的教育理念来；理念里不想要的，计划里一定不要出现
 - Mumi 是一个不能走动、没有手、看不见（除非孩子让它拍照）的小玩具：需要动手的事让孩子自己做，或者和爸爸妈妈一起做；Mumi 只负责说
 - 安全：不涉及危险操作；需要大人参与的动作写明「和爸爸妈妈一起」
@@ -245,34 +246,29 @@ def get_designer(settings: Settings = Depends(get_settings)) -> LLMClient:
     return _designer_llm(settings)
 
 
-@router.post("/draft")
-async def draft_plan(
-    body: DraftIn,
-    family_id: str = Depends(current_family),
-    settings: Settings = Depends(get_settings),
-    ps: ParentStore = Depends(get_parent_store),
-    designer: LLMClient = Depends(get_designer),
-):
-    """家长说一句话，设计师起草一个探索计划（不保存；家长改完再保存 / 发布）。"""
-    if check_input(body.idea):
-        raise HTTPException(status_code=400, detail="这个想法涉及安全方面的内容，换一个试试吧")
-    child = next((c for c in ps.children(family_id) if c["id"] == body.child_id), None)
-    profile = ps.s.family_profile(family_id)
-    context = [f"家长的想法：{body.idea}"]
+def _child_context(family_id: str, child_id: str | None, ps: ParentStore) -> tuple[dict | None, list[str]]:
+    """设计师要知道的：孩子是谁、最近在想什么，以及这个家的理念。"""
+    child = next((c for c in ps.children(family_id) if c["id"] == child_id), None)
+    lines = []
     if child:
-        context.append(f"孩子：{child['name']}，{child['age']} 岁")
+        lines.append(f"孩子：{child['name']}，{child['age']} 岁")
         facts = ps.s.recent_facts(child["id"])
         if facts:
-            context.append("孩子最近感兴趣、经历过的事：" + "；".join(facts))
+            lines.append("孩子最近感兴趣、经历过的事：" + "；".join(facts))
         questions = [q["text"] for q in ps.s.recent_questions(child["id"], limit=12)]
         if questions:
-            context.append("孩子最近问过的问题：" + "；".join(questions))
+            lines.append("孩子最近问过的问题：" + "；".join(questions))
+    profile = ps.s.family_profile(family_id)
     if any(profile.values()):
-        context.append("这个家庭的教育理念：" + "；".join(f"{k}：{v}" for k, v in profile.items() if v))
+        lines.append("这个家庭的教育理念：" + "；".join(f"{k}：{v}" for k, v in profile.items() if v))
+    return child, lines
 
+
+async def _design(context: list[str], designer: LLMClient) -> dict:
+    """设计师按上下文起草一个探索计划；JSON 不合规时带着错误再试一次。"""
     messages = [{"role": "system", "content": DESIGNER_PROMPT}, {"role": "user", "content": "\n".join(context)}]
     last_error = ""
-    for _ in range(2):  # JSON 不合规时带着错误再试一次
+    for _ in range(2):
         try:
             text = "".join([c async for c in designer.stream(messages, max_tokens=1200, temperature=0.7)])
         except LLMError:
@@ -287,6 +283,75 @@ async def draft_plan(
             messages += [{"role": "assistant", "content": text},
                          {"role": "user", "content": f"上面的 JSON 不符合要求：{last_error}。请只输出修正后的 JSON。"}]
     raise HTTPException(status_code=502, detail="这次没起草好，换个说法再试一次")
+
+
+@router.post("/draft")
+async def draft_plan(
+    body: DraftIn,
+    family_id: str = Depends(current_family),
+    ps: ParentStore = Depends(get_parent_store),
+    designer: LLMClient = Depends(get_designer),
+):
+    """家长说一句话，设计师起草一个探索计划（不保存；家长改完再保存 / 发布）。"""
+    if check_input(body.idea):
+        raise HTTPException(status_code=400, detail="这个想法涉及安全方面的内容，换一个试试吧")
+    _, lines = _child_context(family_id, body.child_id, ps)
+    return await _design([f"家长的想法：{body.idea}", *lines], designer)
+
+
+# ---- 别的家长在做什么：按孩子最近的问题挑几个计划，借用并改成自己孩子的 ----
+
+@router.get("/shared")
+def shared_plans(child_id: str | None = None, limit: int = 6, family_id: str = Depends(current_family),
+                 ps: ParentStore = Depends(get_parent_store)):
+    child = None
+    if child_id:
+        if not ps.owns_child(family_id, child_id):
+            raise HTTPException(status_code=404, detail="没有这个孩子")
+        child = next(c for c in ps.children(family_id) if c["id"] == child_id)
+    questions = [q["text"] for q in ps.s.recent_questions(child_id, limit=30)] if child else []
+    facts = ps.s.recent_facts(child_id) if child else []
+    plans = match(child["name"] if child else None, child["age"] if child else None, questions, facts,
+                  limit=max(1, min(limit, 12)))
+    return {"plans": plans}
+
+
+@router.get("/shared/{shared_id}")
+def shared_plan(shared_id: str, _: str = Depends(current_family)):
+    sp = load_shared().get(shared_id)
+    if not sp:
+        raise HTTPException(status_code=404, detail="没有这个计划")
+    return {**sp.card(), "plan": sp.plan.model_dump()}
+
+
+class BorrowIn(BaseModel):
+    shared_id: str
+    child_id: str | None = None
+
+
+@router.post("/borrow")
+async def borrow_plan(
+    body: BorrowIn,
+    family_id: str = Depends(current_family),
+    ps: ParentStore = Depends(get_parent_store),
+    designer: LLMClient = Depends(get_designer),
+):
+    """借用别的家庭的一个计划：保留它的核心想法，按自己孩子的年龄、兴趣和家庭理念改写（不保存）。"""
+    sp = load_shared().get(body.shared_id)
+    if not sp:
+        raise HTTPException(status_code=404, detail="没有这个计划")
+    original = sp.plan.model_dump(exclude={"theme_id"})
+    _, lines = _child_context(family_id, body.child_id, ps)
+    context = [
+        "家长想借用一个别的家庭做过的探索计划，改成适合自己孩子的版本。",
+        "原计划：" + json.dumps(original, ensure_ascii=False),
+        f"原作者的想法：{sp.why}",
+        "请保留原计划的核心想法和好玩的探索动作；按这个孩子的年龄、兴趣、最近问过的问题和家庭理念改写，"
+        "能用上孩子自己的问题和喜欢的东西最好；名字可以改得更贴近这个孩子。",
+        *lines,
+    ]
+    draft = await _design(context, designer)
+    return {"draft": draft, "based_on": sp.plan.name}
 
 
 class Turn(BaseModel):

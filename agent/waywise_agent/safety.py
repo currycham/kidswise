@@ -80,12 +80,30 @@ _OUTPUT_BANNED = re.compile(
 )
 # 错误的安全常识：模型会编出「打雷躲到大树下」这种话，整句丢弃
 # 用前瞻做「同一句里同时出现」，不管词序（英文是 "tree to hide under"，中文是「躲到树下」）
+# 「躲 + 树」单独判断（见 _unsafe_tree）：小鸟躲在树上是自然常识，叫孩子去树下躲才危险
 _OUTPUT_UNSAFE_ADVICE = re.compile(
-    r"^(?:(?=.*(躲|藏|hide|shelter))(?=.*(树|tree))"
-    r"|(?=.*(马路|street|road))(?=.*(玩|跑|play|run))"
+    r"^(?:(?=.*(马路|street|road))(?=.*(玩|跑|play|run))"
     r"|.*(玩火|点火|摸插座|插座里|plug|socket|(去|到)(河边|水边|湖边|池塘)))",
     re.IGNORECASE | re.DOTALL,
 )
+_HIDE = re.compile(r"(躲|藏|hide|shelter)", re.IGNORECASE)
+_TREE = re.compile(r"(树|tree)", re.IGNORECASE)
+_ANIMAL = re.compile(r"(鸟|虫|蚂蚁|蜗牛|松鼠|猫|狗|动物|蝴蝶|青蛙|bird|squirrel|animal|insect|\bants?\b|snail|butterfl|frog)", re.IGNORECASE)
+# 在叫人去躲：「我们躲」「你也躲到……」「躲到树下吧」「let's hide」「hide under」「we/you can hide」
+_PEOPLE_HIDE = re.compile(
+    r"((我们|咱们|你|大家|小朋友)[^，。！？,.!?]{0,4}(躲|藏)|(躲|藏)[^，。！？,.!?]{0,8}吧"
+    r"|let'?s\s+(\w+\s+){0,2}(hide|shelter)|\bhide under\b|\b(we|you)\s+(can |should |could |will |must )?(hide|shelter))",
+    re.IGNORECASE,
+)
+
+
+def _unsafe_tree(sentence: str) -> bool:
+    """同一句里有「躲 / 藏」和「树」：说的是小动物就放过，只要是在叫人去躲就丢掉。"""
+    if not (_HIDE.search(sentence) and _TREE.search(sentence)):
+        return False
+    return bool(_PEOPLE_HIDE.search(sentence)) or not _ANIMAL.search(sentence)
+
+
 # 读出来的话不能带格式：表情、markdown、括号里的动作描写
 _EMOJI = re.compile("[\U0001f000-\U0001faff☀-➿️]")
 _FORMAT = re.compile(r"[*#`_~>|•]|^\s*[-\d]+[.、)]\s*")
@@ -121,7 +139,7 @@ async def safe_stream(chunks: AsyncIterator[str], may_claim_sight: bool = False)
 
     def take(sentence: str) -> str | None:
         nonlocal sentences, chars, dropped, sight_dropped
-        if _OUTPUT_BANNED.search(sentence) or _OUTPUT_UNSAFE_ADVICE.search(sentence):
+        if _OUTPUT_BANNED.search(sentence) or _OUTPUT_UNSAFE_ADVICE.search(sentence) or _unsafe_tree(sentence):
             dropped = True
             return None
         if not may_claim_sight and _CLAIMS_SIGHT.search(_QUOTED.sub("", sentence)):

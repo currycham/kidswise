@@ -144,6 +144,8 @@ def test_output_keeps_english_abbreviations_whole():
     [
         "Let's find a big tree to hide under.",
         "我们躲到大树下面吧！",
+        "小鸟躲在树下，你也躲到树下吧！",
+        "Birds hide in trees, and we can hide under a tree too.",
         "Let's play on the road!",
         "我们一起去河边玩吧！",
         "你可以摸摸插座看看。",
@@ -158,3 +160,10 @@ def test_output_drops_unsafe_advice(bad):
 def test_output_keeps_harmless_tree_talk():
     out = run(["Can you find a tree? ", "Let's walk to the tree!"])
     assert "Can you find a tree?" in out and "walk to the tree" in out
+
+
+def test_output_keeps_animals_hiding_in_trees():
+    # 「下雨天小动物去哪了」这类探索计划里的正常说法，不能被当成危险建议
+    ok = ["下雨的时候，小鸟会躲在树叶下面。", "Birds hide in the trees when it rains.", "小松鼠藏在树洞里。"]
+    out = run([*ok, " 你觉得呢？"])
+    assert all(s in out for s in ok)

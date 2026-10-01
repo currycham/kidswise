@@ -37,6 +37,10 @@
       <p class="muted small">说一句话就行，比如：「他老问为什么天会黑，想借这个让他知道地球在转，但不要直接讲给他听」「想让他对数字有感觉，但不要做题」「下周去自然博物馆，想先让他对恐龙有点概念」</p>
       <form id="ask-form">
         <textarea id="ask-input" rows="3" maxlength="300" placeholder="说说你的想法…"></textarea>
+        <div id="ask-suggest" class="suggest" hidden>
+          <span class="muted small">没想好？别的家长做过这些：</span>
+          <div class="chips" id="ask-suggest-chips"></div>
+        </div>
         <div class="actions">
           <button class="primary" type="submit" id="ask-btn">帮我设计成探索计划</button>
           <span class="muted small" id="ask-status"></span>
@@ -53,11 +57,12 @@
             <button id="new-blank">从空白新建</button>
           </div>
           <div id="my-themes" class="cards"></div>
-          <p class="muted" id="no-themes">还没有。在上面说一句想法，或者从下面的模板开始。</p>
+          <p class="muted" id="no-themes">还没有。在上面说一句想法，或者借用下面别的家长的计划。</p>
         </section>
         <section>
-          <h2>探索计划模板</h2>
-          <div id="templates-x" class="cards"></div>
+          <h2>别的家长在做什么</h2>
+          <p class="muted small" id="shared-caption">按孩子最近问的问题挑的。看中了就借用，会改成适合你家孩子的版本。</p>
+          <div id="shared" class="cards"></div>
         </section>
         <section>
           <h2>英语主题模板</h2>
@@ -83,6 +88,31 @@
       </aside>
     </div>
   </main>
+
+  <!-- 别的家长的一个计划 -->
+  <dialog id="shared-dialog" class="shared-dialog">
+    <form method="dialog" class="dialog-close"><button class="link" aria-label="关闭">×</button></form>
+    <div class="domain" id="sd-domain"></div>
+    <h2 id="sd-name"></h2>
+    <p class="muted small" id="sd-author"></p>
+    <p class="sd-reason" id="sd-reason"></p>
+    <h3>为什么做这个</h3>
+    <p id="sd-why"></p>
+    <div id="sd-reaction-block" hidden>
+      <h3>孩子当时的反应</h3>
+      <p id="sd-reaction"></p>
+    </div>
+    <h3>想让孩子</h3>
+    <p id="sd-goal"></p>
+    <h3>探索动作</h3>
+    <ul id="sd-moves" class="sd-moves"></ul>
+    <div class="actions">
+      <button class="primary" id="sd-borrow">借用，改成我家的</button>
+      <button id="sd-view">直接看原计划</button>
+      <span class="muted small" id="sd-status"></span>
+    </div>
+    <p class="error" id="sd-error"></p>
+  </dialog>
 
   <!-- 顾问 -->
   <main id="advisor-view" class="narrow advisor" hidden>
