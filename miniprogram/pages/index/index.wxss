@@ -12,3 +12,7 @@
 .link { color: var(--accent); }
 .advisor-entry { border: 2rpx solid var(--accent); }
 .advisor-title { font-size: 32rpx; font-weight: 600; margin-bottom: 6rpx; }
+
+/* 切换孩子：家里有几个孩子时出现在顶部 */
+.switcher { display: flex; align-items: center; gap: 8rpx; padding: 4rpx 8rpx 20rpx; }
+.switcher-name { font-weight: 600; flex: 1; }

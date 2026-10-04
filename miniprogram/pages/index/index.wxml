@@ -10,6 +10,12 @@
   </view>
 
   <block wx:else>
+    <!-- 家里有几个孩子时才出现 -->
+    <view class="switcher" wx:if="{{children.length > 1}}" bindtap="switchChild">
+      <text class="muted small">正在看：</text><text class="switcher-name">{{child.name}}</text>
+      <text class="link small">切换 ›</text>
+    </view>
+
     <!-- 孩子的原话：整个小程序最打动人的元素 -->
     <view class="card quote" wx:if="{{today.quote}}">
       <view class="card-title">今天{{child.name}}说</view>

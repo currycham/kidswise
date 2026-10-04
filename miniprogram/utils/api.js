@@ -46,18 +46,29 @@ async function request(path, { method = 'GET', data } = {}, retried = false) {
 }
 
 // 当前查看的孩子：记在本地，默认第一个
-async function currentChild() {
+async function familyChildren() {
   const { children } = await request('/children')
-  if (!children.length) return null
+  if (!children.length) return { children, child: null }
   const saved = wx.getStorageSync('childId')
   const child = children.find((c) => c.id === saved) || children[0]
   wx.setStorageSync('childId', child.id)
-  return child
+  return { children, child }
+}
+
+async function currentChild() {
+  return (await familyChildren()).child
+}
+
+// 切换要看的孩子：其他页面每次打开都会重新读当前孩子
+function switchChild(childId) {
+  wx.setStorageSync('childId', childId)
 }
 
 module.exports = {
   request,
   currentChild,
+  familyChildren,
+  switchChild,
   get: (path) => request(path),
   post: (path, data) => request(path, { method: 'POST', data }),
   patch: (path, data) => request(path, { method: 'PATCH', data }),
