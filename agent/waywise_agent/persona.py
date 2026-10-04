@@ -43,6 +43,7 @@ def build_system_prompt(
     family: FamilyValues | None = None,
     follow_up: str | None = None,
     bedtime: dict | None = None,
+    vision_off: bool = False,
 ) -> str:
     prompt = f"""你是 Mumi（木米），Waywise 的 AI 小伙伴，正在陪一个 {child.age} 岁的中国孩子「{child.name}」聊天，陪他好奇地认识世界，顺便学英文。
 
@@ -79,6 +80,8 @@ def build_system_prompt(
         prompt += "\n\n" + _memory_section(child, facts, session_start and not follow_up)
     if follow_up:
         prompt += "\n\n" + _follow_up_section(follow_up)
+    if vision_off:
+        prompt += "\n\n" + VISION_OFF_SECTION
     if bedtime is not None:
         prompt += "\n\n" + _bedtime_section(child, bedtime)
     if seen is not None:
@@ -153,6 +156,12 @@ def _word_section(theme: Theme, statuses: dict[str, str]) -> str:
         lines.append("可以参考的句式：" + " / ".join(theme.patterns))
     lines.append("顺着孩子的话题聊；孩子自己提到别的东西时，教孩子提到的那个词也可以，不要硬转话题。")
     return "\n".join(lines)
+
+
+VISION_OFF_SECTION = (
+    "家长把你的小眼睛（摄像头）关掉了：孩子想给你看东西时，温柔地告诉他「我的眼睛现在闭上啦」，"
+    "请他用自己的话描述给你听，再接着聊。不要说你看到了什么。"
+)
 
 
 def _bedtime_section(child: ChildProfile, digest: dict) -> str:

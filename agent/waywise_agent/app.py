@@ -228,6 +228,7 @@ async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt:
         family=family_values(rt.store, child.id),
         follow_up=follow_up,
         bedtime=bedtime,
+        vision_off=not rt.store.vision_enabled(child.id),
     )
     return Turn(child, session, theme, [{"role": "system", "content": system}, *history[-MAX_HISTORY:]], child_text=child_text)
 
@@ -249,6 +250,9 @@ async def prepare_photo_turn(req: ChatRequest, device_id: str, seen: str, settin
         family=family_values(rt.store, child.id),
     )
     log.info("photo seen session=%s: %s", session.id, seen[:80])
+    # 家长能看到木米看过什么：只记孩子当时说的话和看到了什么的文字，不存照片
+    asked = next((m["content"] for m in reversed(history) if m["role"] == "user"), "")
+    rt.store.add_photo_event(child.id, session.id, asked, seen)
     history = history[-MAX_HISTORY:]
     if history and history[-1]["role"] == "user":
         history[-1] = {"role": "user", "content": with_photo_note(history[-1]["content"], seen)}
@@ -315,7 +319,7 @@ async def chat_completions(
     else:
         turn = await prepare_turn(req, device_id, settings, rt)
         camera = camera_tool_name(req.tools)
-        if camera and not turn.blocked and wants_to_show(turn.child_text):
+        if camera and not turn.blocked and wants_to_show(turn.child_text) and rt.store.vision_enabled(turn.child.id):
             # ④ 视觉：孩子要给 Mumi 看东西 → 让设备拍照，不调大模型
             call = tool_call_message(camera, photo_question(turn.child_text, turn.child.age), f"call_{uuid.uuid4().hex[:12]}")
             log.info("photo requested session=%s", turn.session.id)

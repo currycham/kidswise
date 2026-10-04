@@ -28,5 +28,26 @@
     <view class="btn {{child ? 'ghost' : ''}}" bindtap="bind">{{child ? '再绑定一台' : '绑定'}}</view>
   </view>
 
+  <view class="card" wx:if="{{child}}">
+    <view class="card-title">木米的眼睛</view>
+    <view class="field">
+      <text class="label wide">让木米看东西</text>
+      <switch checked="{{vision}}" bindchange="toggleVision" />
+    </view>
+    <view class="muted small hint">打开时，孩子说「你看这是什么」，木米会拍一张来理解，照片不保存。关掉后木米不再拍照，仍然能陪孩子聊天。</view>
+    <view class="sub-title">最近 30 天看过什么</view>
+    <view class="muted small" wx:if="{{!seen.length}}">还没有。</view>
+    <view class="seen" wx:for="{{seen}}" wx:key="created_at">
+      <view class="muted small">{{item.time}} · 孩子说「{{item.asked}}」</view>
+      <view class="seen-text">{{item.seen}}</view>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{child}}">
+    <view class="card-title">数据</view>
+    <view class="muted small hint">导出：在电脑上打开 waywise.tech/studio，点「导出数据」。</view>
+    <view class="btn ghost danger" bindtap="deleteData">删除{{child.name}}的全部数据</view>
+  </view>
+
   <view class="error" wx:if="{{error}}">{{error}}</view>
 </view>

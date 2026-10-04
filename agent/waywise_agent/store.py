@@ -62,6 +62,19 @@ CREATE TABLE IF NOT EXISTS memory_fact (
     region TEXT NOT NULL,
     created_at REAL NOT NULL
 );
+CREATE TABLE IF NOT EXISTS child_setting (
+    child_id TEXT PRIMARY KEY REFERENCES child(id),
+    vision_enabled INTEGER NOT NULL DEFAULT 1
+);
+CREATE TABLE IF NOT EXISTS photo_event (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    child_id TEXT NOT NULL REFERENCES child(id),
+    session_id TEXT NOT NULL,
+    asked TEXT NOT NULL,
+    seen TEXT NOT NULL,
+    region TEXT NOT NULL,
+    created_at REAL NOT NULL
+);
 CREATE TABLE IF NOT EXISTS follow_up (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     child_id TEXT NOT NULL REFERENCES child(id),
@@ -362,6 +375,75 @@ class Store:
             except Exception:
                 self._db.execute("ROLLBACK")
                 raise
+
+    # ---- 家长对视觉的控制：开关 + 看过什么（只记文字描述，不存照片）----
+
+    def vision_enabled(self, child_id: str) -> bool:
+        rows = self._q("SELECT vision_enabled FROM child_setting WHERE child_id = ?", (child_id,))
+        return bool(rows[0]["vision_enabled"]) if rows else True
+
+    def set_vision(self, child_id: str, enabled: bool) -> None:
+        self._q(
+            "INSERT INTO child_setting (child_id, vision_enabled) VALUES (?, ?) "
+            "ON CONFLICT(child_id) DO UPDATE SET vision_enabled = excluded.vision_enabled",
+            (child_id, int(enabled)),
+        )
+
+    def add_photo_event(self, child_id: str, session_id: str, asked: str, seen: str) -> None:
+        self._q(
+            "INSERT INTO photo_event (child_id, session_id, asked, seen, region, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (child_id, session_id, asked[:100], seen[:300], self.region, time.time()),
+        )
+
+    def photo_events(self, child_id: str, since: float, limit: int = 100) -> list[dict]:
+        rows = self._q(
+            "SELECT asked, seen, created_at FROM photo_event WHERE child_id = ? AND created_at >= ? ORDER BY id DESC LIMIT ?",
+            (child_id, since, limit),
+        )
+        return [dict(r) for r in rows]
+
+    # ---- 家长删除 / 导出孩子的数据 ----
+
+    _CHILD_TABLES = ("child_question", "memory_fact", "follow_up", "word_progress", "safety_event",
+                     "weekly_report", "photo_event")
+
+    def delete_child_data(self, child_id: str) -> None:
+        """删除这个孩子的全部聊天与成长数据（不可恢复）。孩子、设备绑定和视觉开关保留，木米还能继续用。"""
+        with self._lock:
+            self._db.execute("BEGIN")
+            try:
+                # 先删引用会话的记录，再删消息和会话（外键约束）
+                for t in self._CHILD_TABLES:
+                    self._db.execute(f"DELETE FROM {t} WHERE child_id = ?", (child_id,))
+                self._db.execute("DELETE FROM advisor_message WHERE child_id = ?", (child_id,))
+                sessions = [r[0] for r in self._db.execute("SELECT id FROM session WHERE child_id = ?", (child_id,))]
+                for sid in sessions:
+                    self._db.execute("DELETE FROM message WHERE session_id = ?", (sid,))
+                self._db.execute("DELETE FROM session WHERE child_id = ?", (child_id,))
+                self._db.execute("COMMIT")
+            except Exception:
+                self._db.execute("ROLLBACK")
+                raise
+
+    def export_child_data(self, child_id: str) -> dict:
+        """这个孩子的全部数据，家长导出用。"""
+        sessions = []
+        for srow in self._q("SELECT id, started_at, last_at FROM session WHERE child_id = ? ORDER BY started_at", (child_id,)):
+            msgs = self._q("SELECT role, text, created_at FROM message WHERE session_id = ? AND blocked = 0 ORDER BY id", (srow["id"],))
+            sessions.append({"started_at": srow["started_at"], "ended_at": srow["last_at"],
+                             "messages": [{"who": "child" if m["role"] == "user" else "mumi", "text": m["text"],
+                                           "at": m["created_at"]} for m in msgs]})
+        rows = lambda sql: [dict(r) for r in self._q(sql, (child_id,))]  # noqa: E731
+        return {
+            "sessions": sessions,
+            "questions": rows("SELECT text, created_at FROM child_question WHERE child_id = ? ORDER BY id"),
+            "memories": rows("SELECT fact, created_at FROM memory_fact WHERE child_id = ? ORDER BY id"),
+            "english_words": rows("SELECT word, heard, said FROM word_progress WHERE child_id = ?"),
+            "weekly_reports": [{"week_start": r["week_start"], "report": json.loads(r["data"])} for r in
+                               self._q("SELECT week_start, data FROM weekly_report WHERE child_id = ? ORDER BY week_start", (child_id,))],
+            "photos_seen": rows("SELECT asked, seen, created_at FROM photo_event WHERE child_id = ? ORDER BY id"),
+            "safety_events": rows("SELECT category, created_at FROM safety_event WHERE child_id = ? ORDER BY id"),
+        }
 
     # ---- 睡前回顾：今天真实发生过的事 ----
 

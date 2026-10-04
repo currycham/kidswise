@@ -72,6 +72,22 @@ function logout() {
 }
 $('logout').addEventListener('click', logout)
 
+// 导出孩子的全部数据：对话、问过的问题、记下的事、英文词、周报、看过什么、安全记录
+$('export-data').addEventListener('click', async () => {
+  if (!state.childId) return alert('还没有绑定孩子。')
+  try {
+    const data = await api(`/children/${state.childId}/export`)
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `木米_${childName()}_${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+  } catch (err) {
+    alert(err.message)
+  }
+})
+
 async function enter(children) {
   state.children = children || (await api('/children')).children
   const sel = $('child-select')

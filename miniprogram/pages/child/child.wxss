@@ -5,3 +5,10 @@
 .hint { margin: 20rpx 0 32rpx; }
 .device { padding: 8rpx 0; }
 .card .btn { margin-top: 32rpx; }
+
+/* 木米的眼睛、数据 */
+.label.wide { width: auto; flex: 1; color: var(--ink); }
+.sub-title { font-size: 28rpx; font-weight: 600; margin: 8rpx 0 12rpx; }
+.seen { padding: 16rpx 0; border-top: 2rpx solid var(--line); }
+.seen-text { margin-top: 6rpx; font-size: 28rpx; }
+.btn.danger { color: var(--alert); border-color: var(--alert); }

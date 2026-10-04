@@ -4,6 +4,7 @@
 外加登录、设备配对和孩子档案（昵称、年龄、主题）这几个必要的写操作。
 """
 
+import logging
 import re
 import time
 from datetime import date, datetime, timedelta
@@ -16,6 +17,8 @@ from .auth import AuthError, code_to_openid, issue_token, verify_token
 from .config import Settings, get_settings
 from .store import NEW, BindError, ParentStore
 from .themes import load_themes
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api")
 
@@ -140,6 +143,54 @@ def update_child(
             raise HTTPException(status_code=400, detail="没有这个主题")
     ps.update_child(child_id, body.name, body.age, body.theme_id)
     return next(c for c in ps.children(family_id) if c["id"] == child_id)
+
+
+# ---- 家长对孩子数据的控制：视觉开关、看过什么、导出、删除 ----
+
+
+class VisionIn(BaseModel):
+    enabled: bool
+
+
+@router.get("/children/{child_id}/vision")
+def get_vision(
+    child_id: str = Depends(own_child),
+    settings: Settings = Depends(get_settings),
+    ps: ParentStore = Depends(get_parent_store),
+):
+    """木米的眼睛：开关状态 + 最近 30 天看过什么（时间、孩子当时说的话、看到了什么的文字描述）。"""
+    return {"enabled": ps.s.vision_enabled(child_id),
+            "seen": ps.s.photo_events(child_id, since=time.time() - 30 * 86400)}
+
+
+@router.put("/children/{child_id}/vision")
+def put_vision(body: VisionIn, child_id: str = Depends(own_child), ps: ParentStore = Depends(get_parent_store)):
+    ps.s.set_vision(child_id, body.enabled)
+    return {"enabled": body.enabled}
+
+
+@router.get("/children/{child_id}/export")
+def export_child(child_id: str = Depends(own_child), family_id: str = Depends(current_family),
+                 ps: ParentStore = Depends(get_parent_store)):
+    child = next(c for c in ps.children(family_id) if c["id"] == child_id)
+    return {"child": {"name": child["name"], "age": child["age"]}, "exported_at": time.time(),
+            **ps.s.export_child_data(child_id)}
+
+
+class DeleteIn(BaseModel):
+    confirm: str  # 必须是孩子的昵称，防止误删
+
+
+@router.post("/children/{child_id}/delete-data")
+def delete_child_data(body: DeleteIn, child_id: str = Depends(own_child), family_id: str = Depends(current_family),
+                      ps: ParentStore = Depends(get_parent_store)):
+    """删除这个孩子的全部聊天与成长数据，不可恢复。设备绑定保留，木米还能继续用。"""
+    child = next(c for c in ps.children(family_id) if c["id"] == child_id)
+    if body.confirm.strip() != child["name"]:
+        raise HTTPException(status_code=400, detail="请输入孩子的昵称确认删除")
+    ps.s.delete_child_data(child_id)
+    log.warning("parent deleted all data of child=%s family=%s", child_id, family_id)
+    return {"deleted": True}
 
 
 @router.get("/themes")
