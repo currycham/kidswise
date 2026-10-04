@@ -198,6 +198,8 @@ async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt:
     if child_text != "你好" and is_question(child_text):
         rt.store.add_question(child.id, session.id, child_text)
 
+    # 未完待续：新一场的第一句，问起上次孩子说过还没做完的事（只问一次）
+    follow_up = rt.store.take_follow_up(child.id, exclude_session=session.id) if session.is_new else None
     system = build_system_prompt(
         ChildProfile(name=child.name, age=child.age),
         theme,
@@ -205,6 +207,7 @@ async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt:
         facts=rt.store.recent_facts(child.id, exclude_session=session.id),
         session_start=session.is_new,
         family=family_values(rt.store, child.id),
+        follow_up=follow_up,
     )
     return Turn(child, session, theme, [{"role": "system", "content": system}, *history[-MAX_HISTORY:]], child_text=child_text)
 

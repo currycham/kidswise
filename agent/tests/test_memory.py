@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 from waywise_agent.app import Runtime, app, get_llm, get_runtime
 from waywise_agent.config import Settings, get_settings
-from waywise_agent.memory import MemoryScheduler, extract_facts, grounded, parse_facts
+from waywise_agent.memory import MemoryScheduler, extract_facts, extract_memory, grounded, parse_facts, parse_memory
 from waywise_agent.store import HEARD, NEW, SAID, Store, word_status
 
 AUTH = {"Authorization": "Bearer test-key"}
@@ -17,11 +17,12 @@ class FakeLLM:
 
     def __init__(self):
         self.prompts: list[str] = []
+        self.memory = '{"facts": ["喜欢白色的小狗"], "follow_up": ""}'
 
     async def stream(self, messages, **params):
         system = messages[0]["content"]
-        if system.startswith("从这段对话"):
-            yield '["喜欢白色的小狗"]'
+        if "follow_up" in system:  # 记忆抽取请求
+            yield self.memory
             return
         self.prompts.append(system)
         yield "A dog! Is it running?"
@@ -141,3 +142,45 @@ def test_extraction_drops_copied_examples():
 
     msgs = [{"role": "user", "text": "蜗牛为什么背着房子呀？"}, {"role": "assistant", "text": "你觉得呢？"}]
     assert asyncio.run(extract_facts(Copycat(), msgs)) == ["蜗牛背着房子"]
+
+
+def test_parse_memory_accepts_object_and_old_array():
+    assert parse_memory('{"facts": ["喜欢恐龙"], "follow_up": "明天再去看蜗牛"}') == (["喜欢恐龙"], "明天再去看蜗牛")
+    assert parse_memory('["喜欢恐龙"]') == (["喜欢恐龙"], "")
+    assert parse_memory("没有") == ([], "")
+
+
+def test_follow_up_must_be_something_the_child_said():
+    class Model:
+        def __init__(self, reply): self.reply = reply
+        async def stream(self, messages, **params):
+            yield self.reply
+
+    msgs = [{"role": "user", "text": "它爬得好慢，我要明天再来看它"}, {"role": "assistant", "text": "好呀！"}]
+    _, follow = asyncio.run(extract_memory(Model('{"facts": [], "follow_up": "明天再来看它爬得多远"}'), msgs))
+    assert follow == "明天再来看它爬得多远"
+    _, follow = asyncio.run(extract_memory(Model('{"facts": [], "follow_up": "下周要去海洋馆看鲸鱼"}'), msgs))
+    assert follow is None
+
+
+def test_next_session_asks_about_the_unfinished_thing_once(env):
+    client, llm, store = env
+    llm.memory = '{"facts": [], "follow_up": "明天再来看蜗牛"}'
+    say(client, "它爬得好慢，我要明天再来看蜗牛")
+    say(client, "你好")  # 新的一场：先补抽上一场，再在开头问起
+    assert "还没做完的事：明天再来看蜗牛" in llm.prompts[-1]
+    assert "打招呼时自然地提起其中一件" not in llm.prompts[-1]  # 开头只接这一件事，不同时再提别的记忆
+    say(client, "你好", "我今天画画了")  # 同一场的后续轮次不再提
+    assert "还没做完的事" not in llm.prompts[-1]
+    llm.memory = '{"facts": [], "follow_up": ""}'
+    say(client, "你好")  # 再下一场：已经问过了，不再提
+    assert "还没做完的事" not in llm.prompts[-1]
+
+
+def test_old_follow_ups_are_not_brought_up(tmp_path):
+    store = Store(tmp_path / "t.db")
+    child = store.child_for_device("d", "豆豆", 5, "park")
+    s = store.resolve_session("d", child.id, True, 600)
+    store.save_follow_up(child.id, s.id, "明天再来看蜗牛")
+    store._q("UPDATE follow_up SET created_at = created_at - 4 * 86400")
+    assert store.take_follow_up(child.id, exclude_session="other") is None

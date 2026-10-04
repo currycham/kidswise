@@ -41,6 +41,7 @@ def build_system_prompt(
     session_start: bool = False,
     seen: str | None = None,
     family: FamilyValues | None = None,
+    follow_up: str | None = None,
 ) -> str:
     prompt = f"""你是 Mumi（木米），Waywise 的 AI 小伙伴，正在陪一个 {child.age} 岁的中国孩子「{child.name}」聊天，陪他好奇地认识世界，顺便学英文。
 
@@ -74,7 +75,9 @@ def build_system_prompt(
     if theme:
         prompt += "\n\n" + _theme_section(theme, word_statuses or {})
     if facts:
-        prompt += "\n\n" + _memory_section(child, facts, session_start)
+        prompt += "\n\n" + _memory_section(child, facts, session_start and not follow_up)
+    if follow_up:
+        prompt += "\n\n" + _follow_up_section(follow_up)
     if seen is not None:
         prompt += "\n\n" + _seen_section(seen)
     return prompt
@@ -147,6 +150,15 @@ def _word_section(theme: Theme, statuses: dict[str, str]) -> str:
         lines.append("可以参考的句式：" + " / ".join(theme.patterns))
     lines.append("顺着孩子的话题聊；孩子自己提到别的东西时，教孩子提到的那个词也可以，不要硬转话题。")
     return "\n".join(lines)
+
+
+def _follow_up_section(follow_up: str) -> str:
+    """未完待续：上一次孩子说过还没做完的事，这一场开头问起一次。"""
+    return (
+        f"上次聊天时孩子说过、还没做完的事：{follow_up}\n"
+        "这是新一次聊天的开头，那件事是上次说的：先回应孩子刚说的话，再用「上次你说……」问起它，"
+        "说的是现在要不要去做，不要再说「明天」；这一轮只问这一个问题。孩子不想聊，就跟着他走。"
+    )
 
 
 def _memory_section(child: ChildProfile, facts: list[str], session_start: bool) -> str:

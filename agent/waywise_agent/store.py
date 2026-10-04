@@ -62,6 +62,15 @@ CREATE TABLE IF NOT EXISTS memory_fact (
     region TEXT NOT NULL,
     created_at REAL NOT NULL
 );
+CREATE TABLE IF NOT EXISTS follow_up (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    child_id TEXT NOT NULL REFERENCES child(id),
+    session_id TEXT NOT NULL REFERENCES session(id),
+    text TEXT NOT NULL,
+    region TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    used_at REAL
+);
 CREATE TABLE IF NOT EXISTS word_progress (
     child_id TEXT NOT NULL REFERENCES child(id),
     word TEXT NOT NULL,
@@ -353,6 +362,30 @@ class Store:
             except Exception:
                 self._db.execute("ROLLBACK")
                 raise
+
+    # ---- 未完待续：孩子说过还没做完的一件事，下一场开头问起一次 ----
+
+    def save_follow_up(self, child_id: str, session_id: str, text: str | None) -> None:
+        """一场会话最多一件（同一场可能被抽取多次，以最后一次为准）。"""
+        with self._lock:
+            self._db.execute("DELETE FROM follow_up WHERE session_id = ? AND used_at IS NULL", (session_id,))
+            if text:
+                self._db.execute(
+                    "INSERT INTO follow_up (child_id, session_id, text, region, created_at) VALUES (?, ?, ?, ?, ?)",
+                    (child_id, session_id, text, self.region, time.time()),
+                )
+
+    def take_follow_up(self, child_id: str, exclude_session: str, max_age_s: float = 3 * 86400) -> str | None:
+        """取最近一件还没问过、不太旧的事，并标记为已问起（只问一次）。"""
+        rows = self._q(
+            "SELECT id, text FROM follow_up WHERE child_id = ? AND session_id IS NOT ? AND used_at IS NULL "
+            "AND created_at > ? ORDER BY id DESC LIMIT 1",
+            (child_id, exclude_session, time.time() - max_age_s),
+        )
+        if not rows:
+            return None
+        self._q("UPDATE follow_up SET used_at = ? WHERE id = ?", (time.time(), rows[0]["id"]))
+        return rows[0]["text"]
 
     def recent_facts(self, child_id: str, exclude_session: str | None = None, limit: int = 8) -> list[str]:
         rows = self._q(
