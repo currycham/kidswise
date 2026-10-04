@@ -363,6 +363,23 @@ class Store:
                 self._db.execute("ROLLBACK")
                 raise
 
+    # ---- 睡前回顾：今天真实发生过的事 ----
+
+    def day_digest(self, child_id: str, since: float) -> dict:
+        """这个孩子从 since 起问过的问题、记下的事、碰到的英文词（只用真实记录，木米据此回顾，不编）。"""
+        questions = [r["text"] for r in self._q(
+            "SELECT text FROM child_question WHERE child_id = ? AND created_at >= ? ORDER BY id", (child_id, since))]
+        facts = [r["fact"] for r in self._q(
+            "SELECT fact FROM memory_fact WHERE child_id = ? AND created_at >= ? ORDER BY id", (child_id, since))]
+        words: list[str] = []
+        for r in self._q(
+            "SELECT m.words FROM message m JOIN session s ON s.id = m.session_id "
+            "WHERE s.child_id = ? AND m.created_at >= ? AND m.blocked = 0 ORDER BY m.id", (child_id, since)):
+            for w in json.loads(r["words"] or "[]"):
+                if w not in words:
+                    words.append(w)
+        return {"questions": questions[-6:], "facts": facts[-4:], "words": words[-6:]}
+
     # ---- 未完待续：孩子说过还没做完的一件事，下一场开头问起一次 ----
 
     def save_follow_up(self, child_id: str, session_id: str, text: str | None) -> None:

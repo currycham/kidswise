@@ -42,6 +42,7 @@ def build_system_prompt(
     seen: str | None = None,
     family: FamilyValues | None = None,
     follow_up: str | None = None,
+    bedtime: dict | None = None,
 ) -> str:
     prompt = f"""你是 Mumi（木米），Waywise 的 AI 小伙伴，正在陪一个 {child.age} 岁的中国孩子「{child.name}」聊天，陪他好奇地认识世界，顺便学英文。
 
@@ -78,6 +79,8 @@ def build_system_prompt(
         prompt += "\n\n" + _memory_section(child, facts, session_start and not follow_up)
     if follow_up:
         prompt += "\n\n" + _follow_up_section(follow_up)
+    if bedtime is not None:
+        prompt += "\n\n" + _bedtime_section(child, bedtime)
     if seen is not None:
         prompt += "\n\n" + _seen_section(seen)
     return prompt
@@ -149,6 +152,24 @@ def _word_section(theme: Theme, statuses: dict[str, str]) -> str:
     if theme.patterns:
         lines.append("可以参考的句式：" + " / ".join(theme.patterns))
     lines.append("顺着孩子的话题聊；孩子自己提到别的东西时，教孩子提到的那个词也可以，不要硬转话题。")
+    return "\n".join(lines)
+
+
+def _bedtime_section(child: ChildProfile, digest: dict) -> str:
+    """睡前回顾：孩子说晚安或问今天做了什么时，用今天真实发生过的事讲一个小小的回顾。"""
+    items = (
+        [f"- 问过：{q}" for q in digest.get("questions", [])]
+        + [f"- 说起过：{f}" for f in digest.get("facts", [])]
+    )
+    words = "、".join(digest.get("words", []))
+    if not items and not words:
+        return (f"「{child.name}」要睡觉了，今天还没和你聊过。温柔地说晚安，"
+                "问他今天最开心的一件事是什么；说话轻一点、慢一点。")
+    lines = [f"「{child.name}」要睡觉了，或者想回顾今天。今天他和你聊过这些（只用这些，不要编没发生的事）："] + items
+    if words:
+        lines.append(f"今天碰到的英文词：{words}")
+    lines.append("用两三句话，像讲一个小故事一样回顾今天他看到、想到、问到的东西，带上一两个今天的英文词；"
+                 "夸他今天一个具体的想法，最后轻轻说晚安，或者问一个不用动脑的小问题。说话轻一点、慢一点。")
     return "\n".join(lines)
 
 

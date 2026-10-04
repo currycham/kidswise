@@ -124,6 +124,23 @@ def is_question(text: str) -> bool:
     return len(text.strip()) >= 3 and bool(_QUESTION.search(text))
 
 
+# 睡前回顾的触发：孩子要睡了，或者想听今天做了什么
+_BEDTIME = re.compile(
+    r"(晚安|要睡觉|去睡觉|睡觉了|该睡了|今天(我们)?(都)?(做|干|玩|看|学)了(什么|啥)|讲讲今天|good ?night|bed ?time)",
+    re.IGNORECASE,
+)
+
+
+def is_bedtime(text: str) -> bool:
+    return bool(_BEDTIME.search(text))
+
+
+def today_start() -> float:
+    """本地时区今天零点（容器里 TZ=Asia/Shanghai）。"""
+    t = time.localtime()
+    return time.mktime((t.tm_year, t.tm_mon, t.tm_mday, 0, 0, 0, 0, 0, -1))
+
+
 def family_values(store: Store, child_id: str) -> FamilyValues:
     data = store.family_profile_for_child(child_id)
     return FamilyValues(**{k: data.get(k, "") for k in ("values", "avoid", "language", "child_traits")})
@@ -198,8 +215,10 @@ async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt:
     if child_text != "你好" and is_question(child_text):
         rt.store.add_question(child.id, session.id, child_text)
 
+    # 睡前回顾优先：孩子要睡了，就不再翻上次没做完的事
+    bedtime = rt.store.day_digest(child.id, today_start()) if is_bedtime(child_text) else None
     # 未完待续：新一场的第一句，问起上次孩子说过还没做完的事（只问一次）
-    follow_up = rt.store.take_follow_up(child.id, exclude_session=session.id) if session.is_new else None
+    follow_up = rt.store.take_follow_up(child.id, exclude_session=session.id) if session.is_new and bedtime is None else None
     system = build_system_prompt(
         ChildProfile(name=child.name, age=child.age),
         theme,
@@ -208,6 +227,7 @@ async def prepare_turn(req: ChatRequest, device_id: str, settings: Settings, rt:
         session_start=session.is_new,
         family=family_values(rt.store, child.id),
         follow_up=follow_up,
+        bedtime=bedtime,
     )
     return Turn(child, session, theme, [{"role": "system", "content": system}, *history[-MAX_HISTORY:]], child_text=child_text)
 

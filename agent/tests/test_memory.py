@@ -184,3 +184,34 @@ def test_old_follow_ups_are_not_brought_up(tmp_path):
     store.save_follow_up(child.id, s.id, "明天再来看蜗牛")
     store._q("UPDATE follow_up SET created_at = created_at - 4 * 86400")
     assert store.take_follow_up(child.id, exclude_session="other") is None
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("木米晚安", True), ("我要睡觉了", True), ("今天我们做了什么呀？", True), ("Good night Mumi", True),
+    ("我今天去公园了", False), ("为什么天会黑？", False),
+])
+def test_is_bedtime(text, expected):
+    from waywise_agent.app import is_bedtime
+    assert is_bedtime(text) is expected
+
+
+def test_bedtime_recap_uses_only_today(env):
+    client, llm, store = env
+    say(client, "为什么树叶会掉下来？tree")
+    child_id = store._q("SELECT id FROM child")[0]["id"]
+    store._q("INSERT INTO child_question (child_id, session_id, text, region, created_at) "
+             "SELECT child_id, session_id, '昨天问的旧问题', region, created_at - 86400 FROM child_question LIMIT 1")
+    say(client, "木米晚安")
+    system = llm.prompts[-1]
+    assert "要睡觉了" in system and "为什么树叶会掉下来" in system and "tree" in system
+    assert "昨天问的旧问题" not in system
+    assert store.day_digest(child_id, 0)["questions"][0] == "为什么树叶会掉下来？tree"
+
+
+def test_no_recap_on_ordinary_turns_and_gentle_goodnight_on_empty_days(env):
+    client, llm, store = env
+    say(client, "我今天去公园了")
+    assert "要睡觉了" not in llm.prompts[-1]
+    from waywise_agent.persona import ChildProfile, build_system_prompt
+    empty = build_system_prompt(ChildProfile(name="豆豆", age=5), None, bedtime={"questions": [], "facts": [], "words": []})
+    assert "今天还没和你聊过" in empty
