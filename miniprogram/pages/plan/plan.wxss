@@ -1,0 +1,23 @@
+.idea { width: 100%; min-height: 96rpx; padding: 16rpx 20rpx; box-sizing: border-box; background: var(--bg); border-radius: 16rpx; font-size: 30rpx; }
+.redraft { margin-top: 20rpx; }
+.off { opacity: .5; }
+.based { padding: 0 8rpx 20rpx; }
+.waiting { text-align: center; padding: 56rpx 32rpx; }
+.plan-name { font-size: 34rpx; font-weight: 600; }
+.goal { margin-top: 12rpx; }
+.sub { font-size: 26rpx; color: var(--muted); margin: 28rpx 0 12rpx; }
+.item { padding: 12rpx 0; border-top: 2rpx solid var(--line); }
+.move-type { font-size: 22rpx; color: var(--accent); background: var(--accent-soft); border-radius: 8rpx; padding: 2rpx 10rpx; margin-right: 12rpx; }
+.avoid { margin-top: 20rpx; }
+.accent { color: var(--accent); }
+.chat { max-height: 640rpx; margin-bottom: 16rpx; }
+.bubble { padding: 16rpx 22rpx; border-radius: 20rpx; margin-bottom: 14rpx; line-height: 1.6; }
+.bubble.child { background: var(--accent-soft); margin-left: 80rpx; }
+.bubble.mumi { background: var(--bg); margin-right: 40rpx; }
+.bubble.thinking { color: var(--muted); }
+.who { display: block; font-size: 22rpx; color: var(--muted); }
+.say { display: flex; gap: 16rpx; align-items: center; margin-bottom: 12rpx; }
+.say-input { flex: 1; height: 72rpx; padding: 0 20rpx; background: var(--bg); border-radius: 16rpx; font-size: 28rpx; }
+.say-btn { width: 112rpx; padding: 14rpx 0; }
+.publish { margin: 8rpx 0 20rpx; }
+.center { text-align: center; }

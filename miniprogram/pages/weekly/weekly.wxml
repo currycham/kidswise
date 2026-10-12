@@ -2,7 +2,11 @@
   <view wx:if="{{loading}}" class="empty">顾问正在读这一周的聊天，大约十几秒…</view>
   <view wx:elif="{{error}}" class="error" bindtap="load">{{error}}，点击重试</view>
   <block wx:else>
-    <view class="muted small week">{{r.week_start}} 这一周</view>
+    <view class="row between week">
+      <view class="small accent" bindtap="prevWeek">‹ 上一周</view>
+      <view class="muted small">{{offset === 0 ? '本周' : offset === 1 ? '上周' : r.week_start + ' 这一周'}}（{{r.week_start}} 起）</view>
+      <view class="small {{offset ? 'accent' : 'off'}}" bindtap="nextWeek">下一周 ›</view>
+    </view>
     <view class="card row stats">
       <view class="stat"><view class="num">{{r.stats.sessions}}</view><view class="muted small">次聊天</view></view>
       <view class="stat"><view class="num">{{r.stats.minutes}}</view><view class="muted small">分钟</view></view>

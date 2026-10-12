@@ -1,0 +1,65 @@
+<view class="page">
+  <!-- 想法：起草后也能改一句再起草 -->
+  <view class="card" wx:if="{{!sharedId}}">
+    <view class="card-title">你的想法</view>
+    <textarea class="idea" value="{{idea}}" auto-height maxlength="300" placeholder="比如：想让他对数字有感觉，但不要做题" bindinput="onIdea" />
+    <view class="btn ghost redraft {{drafting ? 'off' : ''}}" bindtap="redraft">{{draft ? '换个说法，重新起草' : '起草'}}</view>
+  </view>
+  <view class="muted small based" wx:if="{{sharedId && basedOn}}">借用自别的家长的「{{basedOn}}」，已按{{child ? child.name : '孩子'}}的情况改写</view>
+
+  <view wx:if="{{drafting}}" class="card waiting">
+    <view>北极星正在起草…</view>
+    <view class="muted small">会用上{{child ? child.name : '孩子'}}最近问过的问题和你们家的理念，大约 10–30 秒</view>
+  </view>
+  <view wx:elif="{{error}}" class="error" bindtap="redraft">{{error}}{{sharedId || idea ? '，点击重试' : ''}}</view>
+
+  <block wx:elif="{{draft}}">
+    <view class="card">
+      <view class="row between">
+        <view class="plan-name">{{draft.name}}</view>
+        <view class="small muted">{{draft.domain}} · {{levelText}}</view>
+      </view>
+      <view class="goal">{{draft.goal}}</view>
+
+      <view class="sub" wx:if="{{draft.ideas.length}}">要点</view>
+      <view class="item" wx:for="{{draft.ideas}}" wx:key="index">
+        <view>{{item.idea}}</view>
+        <view class="muted small" wx:if="{{item.kid_words}}">对孩子说：{{item.kid_words}}</view>
+      </view>
+
+      <view class="sub" wx:if="{{draft.moves.length}}">木米会怎么带他玩</view>
+      <view class="item" wx:for="{{draft.moves}}" wx:key="index">
+        <text class="move-type">{{item.type}}</text>{{item.prompt}}
+      </view>
+
+      <view class="sub" wx:if="{{draft.words.length}}">顺带的英文词</view>
+      <view class="row wrap" wx:if="{{draft.words.length}}">
+        <view class="chip" wx:for="{{draft.words}}" wx:key="index">{{item.en}}<text class="zh">{{item.zh}}</text></view>
+      </view>
+
+      <view class="muted small avoid" wx:if="{{draft.avoid}}">不会做的：{{draft.avoid}}</view>
+    </view>
+
+    <!-- 预览：替孩子说一句，看木米怎么接；不落库 -->
+    <view class="card">
+      <view class="row between">
+        <view class="card-title">听听木米会怎么聊</view>
+        <view class="small accent" bindtap="restartPreview">重新开始</view>
+      </view>
+      <scroll-view scroll-y class="chat" scroll-into-view="{{scrollTo}}">
+        <view wx:for="{{turns}}" wx:key="index" id="t{{index}}" class="bubble {{item.role}}">
+          <text class="who">{{item.role === 'child' ? (child ? child.name : '孩子') : '木米'}}</text>{{item.text}}
+        </view>
+        <view wx:if="{{thinking}}" class="bubble mumi thinking">木米在想…</view>
+      </scroll-view>
+      <view class="say">
+        <input class="say-input" value="{{childLine}}" maxlength="100" placeholder="替孩子说一句，比如「为什么呀？」" confirm-type="send" bindinput="onChildLine" bindconfirm="sendChildLine" />
+        <view class="btn say-btn {{thinking ? 'off' : ''}}" bindtap="sendChildLine">说</view>
+      </view>
+      <view class="muted small">预览不会记进{{child ? child.name : '孩子'}}的记录</view>
+    </view>
+
+    <view class="btn publish {{publishing ? 'off' : ''}}" bindtap="publish">{{child ? '发布给' + child.name : '绑定设备后可发布'}}</view>
+    <view class="muted small center">想逐条细调，可以在电脑上打开 waywise.tech/studio</view>
+  </block>
+</view>

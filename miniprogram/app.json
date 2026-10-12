@@ -6,7 +6,8 @@
     "pages/themes/themes",
     "pages/child/child",
     "pages/weekly/weekly",
-    "pages/advisor/advisor"
+    "pages/advisor/advisor",
+    "pages/plan/plan"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFF8EF",
@@ -34,11 +35,14 @@
       },
       {
         "pagePath": "pages/themes/themes",
-        "text": "我的主题"
+        "text": "探索计划"
       }
     ]
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents"
+  "lazyCodeLoading": "requiredComponents",
+  "networkTimeout": {
+    "request": 90000
+  }
 }

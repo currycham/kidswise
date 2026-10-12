@@ -9,3 +9,5 @@
 .next { margin-bottom: 20rpx; }
 .link { color: var(--accent); margin-top: 8rpx; }
 .foot { text-align: center; padding: 16rpx 0 32rpx; }
+.accent { color: var(--accent); }
+.off { color: var(--line); }

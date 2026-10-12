@@ -69,14 +69,8 @@ Page({
   },
 
   // 探索计划在电脑上做：复制这句想法，到 waywise.tech/studio 粘贴给设计师
+  // 顾问建议的想法直接交给北极星起草
   copyIdea(e) {
-    wx.setClipboardData({
-      data: e.currentTarget.dataset.idea,
-      success: () => wx.showModal({
-        title: '已复制这个想法',
-        content: '在电脑上打开 waywise.tech/studio，粘贴到首页的输入框，设计师会把它做成探索计划。',
-        showCancel: false,
-      }),
-    })
+    wx.navigateTo({ url: `/pages/plan/plan?idea=${encodeURIComponent(e.currentTarget.dataset.idea)}` })
   },
 })
