@@ -14,3 +14,7 @@ ip/*
 # BP figures: keep only the processed fig_* images the BP uses
 bp_assets/*
 !bp_assets/fig_*.jpg
+
+# business plans stay local, out of the public repo
+BP_*
+Waywise商业计划书*
