@@ -1,3 +1,4 @@
+# 主 Caddyfile 归 KidsWise 管：deploy/server_deploy.sh 覆盖 /etc/caddy/Caddyfile 后，会把同机其他产品的 import *.caddy 接回去
 # api.waywise.tech：家长端小程序 / 开发者平台访问 agent 的入口
 # Caddy 自动申请并续期 HTTPS 证书（Let's Encrypt）。原默认配置备份在 Caddyfile.orig
 api.waywise.tech {

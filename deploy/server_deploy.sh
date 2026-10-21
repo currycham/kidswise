@@ -46,8 +46,16 @@ chmod 600 "$BASE/xiaozhi/data/.config.yaml" "$ENV"
 echo "→ 开发者平台页面与 HTTPS 入口"
 sudo mkdir -p /var/www/waywise-studio
 sudo rsync -a --delete "$REPO/studio/" /var/www/waywise-studio/
+CADDY_BAK="/etc/caddy/Caddyfile.bak.$(date +%Y%m%d%H%M%S)"
+sudo cp /etc/caddy/Caddyfile "$CADDY_BAK"
 sudo cp "$REPO/deploy/caddy/Caddyfile" /etc/caddy/Caddyfile
-sudo caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
+# 同一台服务器上的其他 Waywise 产品（readwise / investwise / savewise …）各自装了 /etc/caddy/<名字>.caddy，
+# 并在主 Caddyfile 末尾 import。主文件被上面覆盖了，这里把它们接回去，否则那些网站会下线
+for f in /etc/caddy/*.caddy; do
+  [[ -e "$f" ]] && printf '\nimport %s\n' "$(basename "$f")" | sudo tee -a /etc/caddy/Caddyfile >/dev/null
+done
+sudo caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null \
+  || { sudo cp "$CADDY_BAK" /etc/caddy/Caddyfile; echo "Caddyfile 校验失败，已还原" >&2; exit 1; }
 sudo systemctl reload caddy
 
 echo "→ 重建并启动容器"
