@@ -34,16 +34,5 @@ kidswise.waywise.tech {
 	}
 }
 
-# waywise.tech：Waywise 总品牌的域名，首页还没做。
-# 旧版小程序里写的是 waywise.tech/studio，先整体跳到 KidsWise studio
-waywise.tech, www.waywise.tech {
-	handle /api/* {
-		reverse_proxy 127.0.0.1:8080
-	}
-	handle_path /studio/* {
-		redir * https://kidswise.waywise.tech/studio{uri} 301
-	}
-	handle {
-		redir * https://kidswise.waywise.tech/studio/ 302
-	}
-}
+# waywise.tech（总品牌主页，含旧地址 /studio 的跳转）不在这里，由 waywise_project/home 部署为 /etc/caddy/waywise.caddy，
+# 下面 server_deploy.sh 会把它和其他产品的 *.caddy 一起 import 回来
