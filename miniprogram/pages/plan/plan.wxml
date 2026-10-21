@@ -60,6 +60,6 @@
     </view>
 
     <view class="btn publish {{publishing ? 'off' : ''}}" bindtap="publish">{{child ? '发布给' + child.name : '绑定设备后可发布'}}</view>
-    <view class="muted small center">想逐条细调，可以在电脑上打开 waywise.tech/studio</view>
+    <view class="muted small center">想逐条细调，可以在电脑上打开 kidswise.waywise.tech/studio</view>
   </block>
 </view>

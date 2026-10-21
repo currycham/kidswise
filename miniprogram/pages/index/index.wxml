@@ -4,7 +4,7 @@
 
   <!-- 还没绑定设备 -->
   <view wx:elif="{{!child}}" class="card welcome">
-    <view class="welcome-title">欢迎来到 Waywise</view>
+    <view class="welcome-title">欢迎来到 KidsWise</view>
     <view class="muted">绑定孩子的 Mumi 之后，这里会显示孩子每天学了什么、说了什么。</view>
     <view class="btn" bindtap="goBind">绑定设备</view>
   </view>

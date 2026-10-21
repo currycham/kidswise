@@ -58,7 +58,7 @@ Page({
     try {
       const { code } = await api.post('/studio/login-code')
       this.setData({ loginCode: code, error: '' })
-      wx.setClipboardData({ data: 'waywise.tech/studio', success: () => wx.hideToast() })
+      wx.setClipboardData({ data: 'kidswise.waywise.tech/studio', success: () => wx.hideToast() })
     } catch (e) {
       this.setData({ error: e.message })
     }

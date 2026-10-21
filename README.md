@@ -1,4 +1,4 @@
-# Waywise
+# KidsWise
 
 **家长每天花 3 分钟，孩子每天能自己玩 30–40 分钟，而且玩得有收获；家长花的时间更少了，却比以前更懂孩子。**
 
@@ -80,13 +80,26 @@
 | `agent/` | 木米和北极星的 agent 核心（Python / FastAPI）：人设、记忆、安全检查、视觉、家长端与 studio 接口，详见 [agent/README.md](agent/README.md) |
 | `miniprogram/` | 家长端微信小程序，详见 [miniprogram/README.md](miniprogram/README.md) |
 | `studio/` | 电脑端 studio，用来细调探索计划 |
-| `firmware/` | 设备端固件配置 |
+| `firmware/` | 设备端固件配置（本地编译产物在 `firmware/builds/`，不进仓库） |
 | `enclosure/` | 木星外壳的参数化建模与打印布局 |
 | `deploy/` | 服务端部署（Docker Compose、Caddy、设备接入层配置） |
 | `pilot/` | 试用用的监护人同意书和家长版隐私说明 |
 
+## 历史命名
+
+仓库原名 `waywise_kids_agent`，2026-10-21 起 Waywise 成为产品系列的总品牌，这个产品改名 KidsWise。下面这些内部名字还是旧的，**都属于 KidsWise，不是 Waywise 总品牌的东西**。它们不出现在用户界面里，改名要动线上环境，所以先没改：
+
+| 旧名字 | 在哪里 |
+|---|---|
+| `waywise_agent` | agent 的 Python 包名 |
+| `waywise-agent`、`waywise-xiaozhi` | Docker 容器名、镜像名 |
+| `~/waywise/`、`/var/www/waywise-studio` | 服务器上的部署目录、studio 静态页目录 |
+| `WaywiseAgent`、`WaywiseVLLM`、`WAYWISE_CAMERA_ROTATE`、`waywise-prompt.txt` | xiaozhi 的 provider 名、环境变量、提示词文件 |
+| `waywise-parent` | 小程序工程名（`project.config.json`） |
+| `api.waywise.tech` | 小程序和设备的接口域名，已登记为小程序合法域名 |
+
 ## 名字的由来
 
-- **Waywise**：认得路，也会找路。对孩子来说，是自己找路的本事；对家长来说，是在一堆互相打架的建议里，知道自己该往哪走。
+- **KidsWise**：Waywise 产品系列里陪孩子和家长的那一个。Waywise 的意思是认得路，也会找路：对孩子来说，是自己找路的本事；对家长来说，是在一堆互相打架的建议里，知道自己该往哪走。
 - **木米**：第一位木米是一颗小木星，之后每个孩子造出来的，都是一颗不一样的星球。木是长出来的，米是喂大的；三到六岁的孩子差不多一米高。
 - **北极星**：它不替你走路，只让你一直看得见方向。

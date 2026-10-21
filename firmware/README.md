@@ -24,6 +24,7 @@ sudo docker run --rm -v $PWD:/project -w /project -e HOME=/tmp \
   espressif/idf:release-v5.5 \
   bash -c "git config --global --add safe.directory /project; python scripts/release.py df-s3-ai-cam"
 # 产物：releases/v2.1.0_df-s3-ai-cam.zip → merged-binary.bin
+# 本机已编译好的几个版本（含 yuv / jpeg 等试验版）放在 firmware/builds/，不进仓库
 ```
 
 踩过的坑：

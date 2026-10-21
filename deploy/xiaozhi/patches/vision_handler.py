@@ -19,7 +19,7 @@ MAX_FILE_SIZE = 5 * 1024 * 1024
 
 
 def _white_balance(image_data: bytes, logger) -> bytes:
-    """Waywise 补丁：灰度世界白平衡，只在内存里做，不落盘。
+    """KidsWise 补丁：灰度世界白平衡，只在内存里做，不落盘。
 
     板载 OV3660 在 YUV422 模式下画面明显偏紫（R、B 偏高，G 偏低），会让视觉模型把白杯子说成紫色。
     三个通道均值差距不大时原样返回，避免把正常画面调坏。
@@ -45,7 +45,7 @@ def _white_balance(image_data: bytes, logger) -> bytes:
         return image_data
 
 def _rotate_upright(image_data: bytes, logger) -> bytes:
-    """Waywise 补丁：把照片转正，只在内存里做，不落盘。
+    """KidsWise 补丁：把照片转正，只在内存里做，不落盘。
 
     木米外壳里主板转了 90° 放（镜头才能对上左眼），拍出来的照片也跟着歪。
     WAYWISE_CAMERA_ROTATE 填照片需要顺时针转的角度（0/90/180/270），默认 0：裸板正放时不用转。
@@ -152,8 +152,8 @@ class VisionHandler(BaseHandler):
                 )
 
             # 将图片转换为base64编码
-            image_data = _rotate_upright(image_data, self.logger)  # Waywise 补丁：外壳里主板转了 90°
-            image_data = _white_balance(image_data, self.logger)  # Waywise 补丁：去掉偏紫
+            image_data = _rotate_upright(image_data, self.logger)  # KidsWise 补丁：外壳里主板转了 90°
+            image_data = _white_balance(image_data, self.logger)  # KidsWise 补丁：去掉偏紫
             image_base64 = base64.b64encode(image_data).decode("utf-8")
 
             # 如果开启了智控台，则从智控台获取模型配置
@@ -185,7 +185,7 @@ class VisionHandler(BaseHandler):
 
             result = vllm.response(question, image_base64)
 
-            # Waywise 补丁：不带 action，让拍照结果作为工具结果回到 LLM（我们的 agent），
+            # KidsWise 补丁：不带 action，让拍照结果作为工具结果回到 LLM（我们的 agent），
             # 由 Mumi 用自己的口吻接着聊、顺势教词，而不是把视觉模型的原始描述直接念给孩子。
             return_json = {
                 "success": True,

@@ -20,3 +20,6 @@ bp_assets/*
 /Waywise商业计划书*
 /Mumi_*
 /Waywise_*
+
+# firmware build outputs (zips, merged-binary.bin, esptool venv) stay local
+firmware/builds/

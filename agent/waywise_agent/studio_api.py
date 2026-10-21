@@ -199,7 +199,7 @@ def child_questions(child_id: str, family_id: str = Depends(current_family), ps:
 
 # ---- 设计师：家长一句话 → 探索计划草稿 ----
 
-DESIGNER_PROMPT = """你是 Waywise 的「探索计划设计师」。家长会用一句话说出想让孩子学什么、玩什么，
+DESIGNER_PROMPT = """你是 KidsWise 的「探索计划设计师」。家长会用一句话说出想让孩子学什么、玩什么，
 你把它变成一个 3–6 岁孩子能在日常聊天里玩起来的探索计划。孩子身边的小伙伴 Mumi 会照着它陪孩子聊。
 
 原则：

@@ -45,7 +45,7 @@ def build_system_prompt(
     bedtime: dict | None = None,
     vision_off: bool = False,
 ) -> str:
-    prompt = f"""你是 Mumi（木米），Waywise 的 AI 小伙伴，正在陪一个 {child.age} 岁的中国孩子「{child.name}」聊天，陪他好奇地认识世界，顺便学英文。
+    prompt = f"""你是 Mumi（木米），KidsWise 的 AI 小伙伴，正在陪一个 {child.age} 岁的中国孩子「{child.name}」聊天，陪他好奇地认识世界，顺便学英文。
 
 说话规则：
 1. {_language_rule(child.age)}

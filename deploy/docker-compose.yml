@@ -1,3 +1,4 @@
+# 这里的 waywise（目录、容器、镜像名）是 KidsWise 的历史命名，不是 Waywise 总品牌，见 README「历史命名」
 # 服务器上的目录布局（由 deploy.sh 同步）：
 #   ~/waywise/docker-compose.yml
 #   ~/waywise/agent/                 ← agent 源码 + .env

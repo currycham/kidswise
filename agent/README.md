@@ -1,6 +1,6 @@
-# Waywise Agent
+# KidsWise Agent
 
-Waywise 儿童英语陪伴的 Agent 核心（软件文档第 ② 块）。对外伪装成一个 OpenAI 兼容的 LLM，
+KidsWise 儿童陪伴的 Agent 核心（软件文档第 ② 块）。对外伪装成一个 OpenAI 兼容的 LLM，
 设备接入层（xiaozhi-esp32-server）只需把 LLM 指向这里。Mumi（木米）是它的角色人设。
 
 ## 本地运行

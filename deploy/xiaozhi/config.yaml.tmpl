@@ -5,7 +5,7 @@ server:
   vision_explain: http://__PUBLIC_HOST__:8003/mcp/vision/explain
   timezone_offset: +8
 
-# 人设在 Waywise agent 里。xiaozhi 的 system prompt 只用来带设备 ID：
+# 人设在 KidsWise agent 里（provider 名 WaywiseAgent / WaywiseVLLM 是历史命名，没改）。xiaozhi 的 system prompt 只用来带设备 ID：
 # 模板只渲染出 <waywise-device id="..."/>，agent 解析后丢弃其余内容。
 prompt: |
   你是 Mumi。

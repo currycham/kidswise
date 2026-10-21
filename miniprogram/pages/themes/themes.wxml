@@ -42,7 +42,7 @@
 
     <view class="card studio">
       <view class="studio-title">想逐条细调？</view>
-      <view class="muted small">在电脑上打开 <text class="url">waywise.tech/studio</text>，输入下面的登录码，可以改每一个要点、动作和词。</view>
+      <view class="muted small">在电脑上打开 <text class="url">kidswise.waywise.tech/studio</text>，输入下面的登录码，可以改每一个要点、动作和词。</view>
       <view wx:if="{{loginCode}}" class="login-code">{{loginCode}}</view>
       <view wx:if="{{loginCode}}" class="muted small">5 分钟内有效，只能用一次</view>
       <view class="btn ghost code-btn" bindtap="getLoginCode">{{loginCode ? '换一个登录码' : '获取电脑登录码'}}</view>

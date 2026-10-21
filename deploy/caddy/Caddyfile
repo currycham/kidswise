@@ -15,8 +15,9 @@ api.waywise.tech {
 	}
 }
 
-# waywise.tech：开发者平台（/studio）。/api 同域转给 agent，页面不用跨域
-waywise.tech, www.waywise.tech {
+# kidswise.waywise.tech：KidsWise 开发者平台（/studio）。/api 同域转给 agent，页面不用跨域
+# studio 静态页目录 /var/www/waywise-studio 是历史命名，见 README「历史命名」
+kidswise.waywise.tech {
 	encode gzip
 
 	handle /api/* {
@@ -29,5 +30,19 @@ waywise.tech, www.waywise.tech {
 	}
 	handle {
 		redir * /studio/ 302
+	}
+}
+
+# waywise.tech：Waywise 总品牌的域名，首页还没做。
+# 旧版小程序里写的是 waywise.tech/studio，先整体跳到 KidsWise studio
+waywise.tech, www.waywise.tech {
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle_path /studio/* {
+		redir * https://kidswise.waywise.tech/studio{uri} 301
+	}
+	handle {
+		redir * https://kidswise.waywise.tech/studio/ 302
 	}
 }

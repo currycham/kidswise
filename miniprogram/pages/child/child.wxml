@@ -45,7 +45,7 @@
 
   <view class="card" wx:if="{{child}}">
     <view class="card-title">数据</view>
-    <view class="muted small hint">导出：在电脑上打开 waywise.tech/studio，点「导出数据」。</view>
+    <view class="muted small hint">导出：在电脑上打开 kidswise.waywise.tech/studio，点「导出数据」。</view>
     <view class="btn ghost danger" bindtap="deleteData">删除{{child.name}}的全部数据</view>
   </view>
 

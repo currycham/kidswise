@@ -1,4 +1,4 @@
-# Waywise Agent 接口（2026-09-26 冻结）
+# KidsWise Agent 接口（2026-09-26 冻结）
 
 > 软件文档第 5 天：**agent 接口今天冻结，之后只加不改。**
 > 新增字段、新增端点可以；改名、删字段、改语义不行 —— 设备层、小程序、开发者平台都依赖它。
@@ -60,7 +60,7 @@ OpenAI Chat Completions 兼容。只给服务器内部的设备接入层（xiaoz
 
 ## 4. 开发者平台：`/api/studio/*`（2026-09-26 加）
 
-页面在 `https://waywise.tech/studio/`，同域调用 `https://waywise.tech/api/...`（与 `api.waywise.tech` 等价）。
+页面在 `https://kidswise.waywise.tech/studio/`，同域调用 `https://kidswise.waywise.tech/api/...`（与 `api.waywise.tech` 等价）。旧地址 `waywise.tech/studio` 会跳转过来。
 
 | 方法 | 路径 | 说明 |
 |---|---|---|

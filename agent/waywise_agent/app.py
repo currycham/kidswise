@@ -29,7 +29,7 @@ from .vision import (
 )
 
 log = logging.getLogger("waywise")
-app = FastAPI(title="Waywise Agent")
+app = FastAPI(title="KidsWise Agent")
 
 MAX_HISTORY = 20  # 会话内记忆：截断到最近 N 条
 # xiaozhi 的 prompt 模板（deploy/xiaozhi/waywise-prompt.txt）只输出这个标记，用来告诉我们是哪台设备

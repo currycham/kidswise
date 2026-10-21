@@ -1,6 +1,6 @@
-// Waywise Studio：家长自己的教育 agent（家长教育 Agent 方案）。
+// KidsWise Studio：家长自己的教育 agent（家长教育 Agent 方案）。
 // 说一句想法 → 设计师起草探索计划 → 改一改 → 预览 Mumi 会怎么聊 → 发布给孩子。
-// 接口与页面同域：https://waywise.tech/api/...（见 agent/API.md）
+// 接口与页面同域：https://kidswise.waywise.tech/api/...（见 agent/API.md）
 
 const $ = (id) => document.getElementById(id)
 

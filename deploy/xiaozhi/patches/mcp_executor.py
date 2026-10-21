@@ -63,7 +63,7 @@ class DeviceMCPExecutor(ToolExecutor):
         except ValueError as e:
             return ActionResponse(action=Action.NOTFOUND, response=str(e))
         except Exception as e:
-            # Waywise 补丁：设备工具失败（如拍照失败）不要把「MCP错误: Failed to capture photo」念给孩子，
+            # KidsWise 补丁：设备工具失败（如拍照失败）不要把「MCP错误: Failed to capture photo」念给孩子，
             # 作为失败的工具结果交回 LLM（我们的 agent），由 Mumi 用自己的话请孩子再试一次。
             import json as _json
 
