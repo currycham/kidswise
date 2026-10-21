@@ -8,7 +8,7 @@ REF="${1:-main}"
 cd "$(dirname "$0")/.."
 
 if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
-  echo "提醒：本地有未提交的改动，它们不会被部署（部署的是 GitHub 上的 $REF）" >&2
+  echo "提醒：本地有未提交的改动，它们不会被部署（部署的是 GitHub 上的 ${REF}）" >&2
 fi
 git fetch -q origin
 if [[ "$REF" == "main" && "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]]; then
