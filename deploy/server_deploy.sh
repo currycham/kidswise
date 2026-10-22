@@ -11,7 +11,7 @@ ENV=$BASE/agent/.env
 cd "$REPO"
 SHA=$(git rev-parse --short HEAD)
 
-[[ -f "$ENV" ]] || { echo "缺少 $ENV（先运行 deploy/push_env.sh）" >&2; exit 1; }
+[[ -f "$ENV" ]] || { echo "缺少 ${ENV}（先运行 deploy/push_env.sh）" >&2; exit 1; }
 env_get() { grep -E "^$1=" "$ENV" | tail -1 | cut -d= -f2- || true; }
 
 AGENT_API_KEY="$(env_get AGENT_API_KEY)"
@@ -46,16 +46,19 @@ chmod 600 "$BASE/xiaozhi/data/.config.yaml" "$ENV"
 echo "→ 开发者平台页面与 HTTPS 入口"
 sudo mkdir -p /var/www/waywise-studio
 sudo rsync -a --delete "$REPO/studio/" /var/www/waywise-studio/
-CADDY_BAK="/etc/caddy/Caddyfile.bak.$(date +%Y%m%d%H%M%S)"
-sudo cp /etc/caddy/Caddyfile "$CADDY_BAK"
-sudo cp "$REPO/deploy/caddy/Caddyfile" /etc/caddy/Caddyfile
-# 同一台服务器上的其他 Waywise 产品（readwise / investwise / savewise …）各自装了 /etc/caddy/<名字>.caddy，
-# 并在主 Caddyfile 末尾 import。主文件被上面覆盖了，这里把它们接回去，否则那些网站会下线
-for f in /etc/caddy/*.caddy; do
-  [[ -e "$f" ]] && printf '\nimport %s\n' "$(basename "$f")" | sudo tee -a /etc/caddy/Caddyfile >/dev/null
-done
-sudo caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null \
-  || { sudo cp "$CADDY_BAK" /etc/caddy/Caddyfile; echo "Caddyfile 校验失败，已还原" >&2; exit 1; }
+# 主 /etc/caddy/Caddyfile 只是各产品 *.caddy 的 import 列表，归 waywise_project/ops/caddy 管；这里只装自己的 kidswise.caddy
+TS=$(date +%Y%m%d%H%M%S)
+sudo cp /etc/caddy/Caddyfile "/etc/caddy/Caddyfile.bak.$TS"
+[[ -f /etc/caddy/kidswise.caddy ]] && sudo cp /etc/caddy/kidswise.caddy "/etc/caddy/kidswise.caddy.bak.$TS"
+sudo install -m 644 "$REPO/deploy/caddy/kidswise.caddy" /etc/caddy/kidswise.caddy
+sudo grep -q '^import kidswise.caddy' /etc/caddy/Caddyfile \
+  || printf '\nimport kidswise.caddy\n' | sudo tee -a /etc/caddy/Caddyfile >/dev/null
+if ! sudo caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null; then
+  sudo cp "/etc/caddy/Caddyfile.bak.$TS" /etc/caddy/Caddyfile
+  if [[ -f "/etc/caddy/kidswise.caddy.bak.$TS" ]]; then sudo cp "/etc/caddy/kidswise.caddy.bak.$TS" /etc/caddy/kidswise.caddy; else sudo rm -f /etc/caddy/kidswise.caddy; fi
+  echo "Caddy 配置校验失败，已还原。若主 Caddyfile 里还有旧的 api.waywise.tech 配置，先运行 waywise_project/ops/caddy/apply.sh" >&2
+  exit 1
+fi
 sudo systemctl reload caddy
 
 echo "→ 重建并启动容器"
@@ -80,4 +83,4 @@ curl -sf https://api.waywise.tech/healthz >/dev/null || { echo "api.waywise.tech
 mkdir -p "$BASE/bin" && install -m 755 "$REPO/deploy/server_launcher.sh" "$BASE/bin/deploy"
 
 echo "$SHA $(date '+%F %T')" > "$BASE/DEPLOYED"
-echo "✓ 已部署 $SHA：agent、xiaozhi、api.waywise.tech 都正常"
+echo "✓ 已部署 ${SHA}：agent、xiaozhi、api.waywise.tech 都正常"
