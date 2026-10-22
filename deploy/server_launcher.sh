@@ -11,7 +11,7 @@ REPO=$BASE/repo
 REF="${SSH_ORIGINAL_COMMAND:-${1:-origin/main}}"
 
 if [[ ! "$REF" =~ ^[A-Za-z0-9._/-]{1,80}$ ]]; then
-  echo "拒绝：版本号格式不对（$REF）" >&2
+  echo "拒绝：版本号格式不对（${REF}）" >&2
   exit 2
 fi
 
